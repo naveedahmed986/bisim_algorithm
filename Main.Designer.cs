@@ -1,6 +1,6 @@
 ﻿namespace Bisimulation_Desktop
 {
-    partial class Form1
+    partial class Main
     {
         /// <summary>
         /// Required designer variable.
@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.button2 = new System.Windows.Forms.Button();
             this.pathLabel = new System.Windows.Forms.Label();
@@ -35,6 +36,8 @@
             this.button4 = new System.Windows.Forms.Button();
             this.pathLabel2 = new System.Windows.Forms.Label();
             this.parseSelection = new System.Windows.Forms.ComboBox();
+            this.picLoader = new System.Windows.Forms.PictureBox();
+            ((System.ComponentModel.ISupportInitialize)(this.picLoader)).BeginInit();
             this.SuspendLayout();
             // 
             // richTextBox1
@@ -101,12 +104,24 @@
             this.parseSelection.TabIndex = 7;
             this.parseSelection.SelectedIndexChanged += new System.EventHandler(this.parseSelection_SelectedIndexChange);
             // 
-            // Form1
+            // picLoader
+            // 
+            this.picLoader.Image = ((System.Drawing.Image)(resources.GetObject("picLoader.Image")));
+            this.picLoader.InitialImage = ((System.Drawing.Image)(resources.GetObject("picLoader.InitialImage")));
+            this.picLoader.Location = new System.Drawing.Point(591, 129);
+            this.picLoader.Name = "picLoader";
+            this.picLoader.Size = new System.Drawing.Size(57, 55);
+            this.picLoader.TabIndex = 8;
+            this.picLoader.TabStop = false;
+            this.picLoader.Visible = false;
+            // 
+            // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(1272, 951);
+            this.Controls.Add(this.picLoader);
             this.Controls.Add(this.parseSelection);
             this.Controls.Add(this.pathLabel2);
             this.Controls.Add(this.button4);
@@ -114,9 +129,10 @@
             this.Controls.Add(this.pathLabel);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.richTextBox1);
-            this.Name = "Form1";
-            this.Text = "Form1";
+            this.Name = "Main";
+            this.Text = "Main";
             this.Load += new System.EventHandler(this.Form1_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.picLoader)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -131,6 +147,7 @@
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.Label pathLabel2;
         private System.Windows.Forms.ComboBox parseSelection;
+        private System.Windows.Forms.PictureBox picLoader;
     }
 }
 

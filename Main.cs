@@ -5,14 +5,18 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.Xml.Serialization;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Bisimulation_Desktop
 {
-    public partial class Form1 : Form
+    public partial class Main : Form
     {
         string filePath { get; set; }
         string filePath2 { get; set; }
-        public Form1()
+
+        List<int> locationIds = new List<int>();
+        public Main()
         {
             InitializeComponent();
         }
@@ -48,11 +52,13 @@ namespace Bisimulation_Desktop
                 if (ofd.CheckPathExists && ofd.CheckFileExists)
                     if (!string.IsNullOrEmpty(ofd.FileName))
                         return ofd.FileName;
+            ofd.Dispose();
             return "";
         }
 
         private void model_transform_Click(object sender, EventArgs e)
         {
+            richTextBox1.Clear();
             if (string.IsNullOrEmpty(filePath))
             {
                 pathLabel.ForeColor = Color.Red;
@@ -64,20 +70,55 @@ namespace Bisimulation_Desktop
                 pathLabel2.Text = "File not found. Please open a file (.xml)";
             }
             else
-                TransformModels();
+            {
+                SetLoading(true);
+                Nta model = TransformModels();
+                NtatoXML(model);
+                SetLoading(false);
+           
+            }
         }
 
-        private void TransformModels()
+        private void parseSelection_SelectedIndexChange(object sender, EventArgs e)
+        {
+            if (parseSelection.SelectedIndex == 0)
+            {
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    PrintXML(filePath);
+                }
+                else
+                {
+                    pathLabel.ForeColor = Color.Red;
+                    pathLabel.Text = "File not found. Please open a file (.xml)";
+                }
+            }
+            else if (parseSelection.SelectedIndex == 1)
+            {
+                if (!string.IsNullOrEmpty(filePath2))
+                {
+                    PrintXML(filePath2);
+                }
+                else
+                {
+                    pathLabel2.ForeColor = Color.Red;
+                    pathLabel2.Text = "File not found. Please open a file (.xml)";
+                }
+            }
+        }
+
+        //Mostly function calls and get channels template-wise 
+        private Nta TransformModels()
         {
             try
             {
-                Nta model1 = NtaFromXML(filePath);
-                Nta model2 = NtaFromXML(filePath2);
+                Nta model1 = XMLtoNta(filePath);
+                Nta model2 = XMLtoNta(filePath2);
 
                 model2 = RenameTemplatesInModel(model1, model2);
                 model1 = MergeModels(model1, model2);
+                
                 //********** TODO : Remove ***********************
-
                 //richTextBox1.Clear();
                 //richTextBox1.AppendText("\n");
                 //for (int x = 0; x < model1.Template.Count; x++)
@@ -86,12 +127,10 @@ namespace Bisimulation_Desktop
                 //}
                 //************************************************
 
-
                 Channel channelInfo;
                 bool hasSelectLabel = false;
 
                 Dictionary<string, Channel> channels = new Dictionary<string, Channel>();
-                List<Location> locations = new List<Location>();
 
                 Dictionary<string, NdLocation> ndLocationList = new Dictionary<string, NdLocation>();
                 NdLocation ndLocations = new NdLocation();
@@ -103,12 +142,13 @@ namespace Bisimulation_Desktop
                 {
                     foreach (Template template in model1.Template) // Loop over all templates
                     {
-                        // List of all locations in the model
-                        locations = AddLocations(locations, template);
+                        // List of Ids of all locations in the model
+                        AddLocationsIds(template);
                         //***********************************
 
-                        // List of all non-deterministic locations in the models template wise
+                        // List of all non-deterministic locations in the model template wise
                         ndLocations = AddNdLocationsByTemplate(template);
+
                         if (ndLocations.getNdLocations().Count > 0)
                             ndLocationList.Add(template.Name.Text, ndLocations);
                         //***********************************
@@ -156,6 +196,15 @@ namespace Bisimulation_Desktop
                     }
                 }
 
+                Nta modelx = AddCommittedLocations(ndLocationList, model1);
+                //List<Template> templates = model1.Template;
+
+                //IEnumerable<Template> template1 = from t in templates where t.Name.Text == "machine" select t;
+
+                //string search = "lookforme";
+                //List<string> myList = new List<string>();
+                //string result = myList.Where(s => s == search);
+
                 //********** TODO : Remove ***********************
                 //if (channels.Count > 0)
                 //{
@@ -178,26 +227,57 @@ namespace Bisimulation_Desktop
                 //}
                 //else
                 //    richTextBox1.Text = "No channels found in the model";
+                //richTextBox1.Text = GetNewLocationId();
                 //*********************************************
+                return modelx;
             }
             catch (Exception ex)
             {
                 richTextBox1.ForeColor = Color.Red;
                 richTextBox1.Text = ex.Message;
                 richTextBox1.ForeColor = Color.Black;
+                return null;
             }
         }
 
-        private Nta NtaFromXML(string path)
+        //Serialize XML to Nta and returns Nta class object
+        private Nta XMLtoNta(string path)
         {
             Nta nta;
-            var serializer = new XmlSerializer(typeof(Nta));
+            XmlSerializer serializer = new XmlSerializer(typeof(Nta));
             StreamReader file = new StreamReader(path);
             nta = (Nta)serializer.Deserialize(file);
             file.Close();
             return nta;
         }
 
+        //Serialize Nta to XML and write it on the disk
+        private void NtatoXML(Nta model)
+        {
+            if (model != null)
+            {
+                XmlSerializer xml = new XmlSerializer(typeof(Nta));
+                var xmlnsEmpty = new XmlSerializerNamespaces();
+                xmlnsEmpty.Add("", "");
+                var path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "//bi_model.xml";
+                FileStream file = File.Create(path);
+                using (XmlWriter writer = XmlWriter.Create(file))
+                {
+                    //writer.WriteDocType("nta", "-//Uppaal Team//DTD Flat System 1.1//EN\' \'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd\'", null, null);
+                    xml.Serialize(writer, model, xmlnsEmpty);
+                }
+                file.Close();
+                richTextBox1.ForeColor = Color.Black;
+                richTextBox1.Text = "File saved at : " + Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                richTextBox1.AppendText("\n\nFile name : bi_model.xml");
+            }
+        }
+
+        /*
+         * Compare the names of the templates from model1 and models 
+         * and rename duplications in model2 with postfix "_" and incremental integer number
+         * returns model2
+         */
         private Nta RenameTemplatesInModel(Nta model1, Nta model2)
         {
             int uniqueNamePostfix;
@@ -245,14 +325,18 @@ namespace Bisimulation_Desktop
             return model2;
         }
 
+        //Merge model2 into model1, templates and system properties and returns model1
         private Nta MergeModels(Nta model1, Nta model2)
         {
+            // 1. Merge templates of model2 in model1
             foreach(Template template in model2.Template)
             {
                 model1.Template.Add(template);
             }
 
-             //******* Remove system statement from model2 system so that 
+            // 2. Merge system properties of model2 in model1
+            
+            //******* Remove system statement from model2 system so that 
             //rest of the text can be added to model1 system ******
             string systemProperties2 = @model2.System;
             int startPosition = systemProperties2.IndexOf("\nsystem");
@@ -277,11 +361,12 @@ namespace Bisimulation_Desktop
             systemStatement = systemStatement + ";";
 
             systemProperties1 = systemProperties1 + "\n" + systemStatement;
-            richTextBox1.AppendText("\n"+ systemProperties1);
-           //richTextBox1.AppendText("\n" + systemProperties2);
+
+            model1.System = systemProperties1;
             return model1;
         }
         
+        //checks if channel is In or Out
         private bool IsChannelBroadcaster(string channelName)
         {
             if (channelName.LastIndexOf('!') == channelName.Length-1)
@@ -289,15 +374,22 @@ namespace Bisimulation_Desktop
             return false;
         }
 
-        private List<Location> AddLocations(List<Location> list, Template template)
+        //Keeps track of locationId in the whole model to avoid duplications
+        private void AddLocationsIds(Template template)
         {
             for (int x = 0; x < template.Location.Count; x++)
             {
-                list.Add(template.Location[x]);
+                locationIds.Add(Int32.Parse(Regex.Match(template.Location[x].Id, @"\d+").Value));
             }
-            return list;
         }
 
+        //returns new id to be assigned to new location
+        private string GetNewLocationId()
+        {
+            return ("id" + Convert.ToString(locationIds.Count > 0 ? (locationIds.Max() + 1) : 0));
+        }
+
+        //identifies non-deterministic locations and returns a list for a given template
         private NdLocation AddNdLocationsByTemplate(Template template)
         {
             NdLocation ndLocation = new NdLocation();
@@ -316,32 +408,10 @@ namespace Bisimulation_Desktop
             return ndLocation;
         }
 
-        private void parseSelection_SelectedIndexChange(object sender, EventArgs e)
-        {
-            if (parseSelection.SelectedIndex == 0)
-            {
-                if (!string.IsNullOrEmpty(filePath))
-                    PrintXML(filePath);
-                else
-                {
-                    pathLabel.ForeColor = Color.Red;
-                    pathLabel.Text = "File not found. Please open a file (.xml)";
-                }
-            }
-            else if (parseSelection.SelectedIndex == 1)
-            {
-                if (!string.IsNullOrEmpty(filePath2))
-                    PrintXML(filePath2);
-                else
-                {
-                    pathLabel2.ForeColor = Color.Red;
-                    pathLabel2.Text = "File not found. Please open a file (.xml)";
-                }
-            }
-        }
-
+        // prints the model in xml format
         private void PrintXML(string path)
         {
+            SetLoading(true);
             richTextBox1.Clear();
             if (!string.IsNullOrEmpty(path))
             {
@@ -399,6 +469,94 @@ namespace Bisimulation_Desktop
                     }
                 }
             }
+            SetLoading(false);
+        }
+
+        //set cursor to loading while some operation is taking place
+        private void SetLoading(bool displayLoader)
+        {
+            if (displayLoader)
+            {
+                this.Invoke((MethodInvoker)delegate
+                {
+                    //picLoader.Visible = true;
+                    this.Cursor = Cursors.WaitCursor;
+                });
+            }
+            else
+            {
+                this.Invoke((MethodInvoker)delegate
+                {
+                    //picLoader.Visible = false;
+                    this.Cursor = Cursors.Default;
+                });
+            }
+        }
+
+        /*
+         * Get the non-deterministic locations with template names and the processed merged model
+         * Retruns the models with modified templates
+         */
+        private Nta AddCommittedLocations(Dictionary<string,NdLocation> ndLocationList, Nta model)
+        {
+            Template template;
+            NdLocation ndLocation;
+            string templateName = string.Empty;
+            if (ndLocationList != null && ndLocationList.Count > 0)
+            {
+                foreach(var item in ndLocationList)
+                {
+                    templateName = item.Key;
+                    ndLocation = item.Value;
+                    template = (from t in model.Template where t.Name.Text == item.Key select t).First();
+                    model.Template.Remove(template);
+
+                    template = AddNewLocation(ndLocation,template);
+
+                    model.Template.Add(template);
+                }
+            }
+            return model;
+        }
+
+        //Add committed locations for non-deterministic locations for a given template
+        private Template AddNewLocation(NdLocation ndLocation, Template template)
+        {
+            foreach(Location location in ndLocation.getNdLocations())
+            {
+                string existingTargetid;
+                string newId;
+                Location committedLocation;
+                Transition transition;;
+                for( int i = 0; i < template.Transition.Count; i++)
+                {
+                    existingTargetid = string.Empty;
+                    newId = string.Empty;
+                    if(template.Transition[i].Source.Ref == location.Id)
+                    {
+                        existingTargetid = template.Transition[i].Target.Ref; //save target of the existing transition
+                        newId = GetNewLocationId(); //get new id from id list for new location
+                        committedLocation = new Location(); //initialize new location
+                        committedLocation.Id = newId;
+                        committedLocation.Committed = "committed";
+
+                        template.Transition[i].Target.Ref = newId; //set target of existing transition as the id of new location
+                        
+                        transition = new Transition(); //initialize new transition
+                        transition.Source = new Source(); 
+                        transition.Target = new Target();
+
+                        transition.Source.Ref = newId; //set transition source as the id of the new location
+                        transition.Target.Ref = existingTargetid; // set target as the target of existing transition
+
+                        locationIds.Add(Int32.Parse(Regex.Match(newId, @"\d+").Value)); // add new id to the location id list
+                        
+                        template.Location.Add(committedLocation); //add new location in the template              
+                        template.Transition.Add(transition); //add new transition in the template
+                    }
+                }
+            }
+            return template;
         }
     }
 }
