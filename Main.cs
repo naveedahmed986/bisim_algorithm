@@ -107,7 +107,10 @@ namespace Bisimulation_Desktop
             }
         }
 
-        //Mostly function calls and get channels template-wise 
+        /*
+         * Get all channels based template-wise
+         * Function calls to calculate non-deterministic locations and transitions
+         */
         private Nta TransformModels()
         {
             try
@@ -379,8 +382,14 @@ namespace Bisimulation_Desktop
         {
             for (int x = 0; x < template.Location.Count; x++)
             {
-                locationIds.Add(Int32.Parse(Regex.Match(template.Location[x].Id, @"\d+").Value));
+                locationIds.Add(GetNumberFromString(template.Location[x].Id));
             }
+        }
+
+        // Gets String and returns an integer number from the string
+        private int GetNumberFromString(string id)
+        {
+            return Int32.Parse(Regex.Match(id, @"\d+").Value);
         }
 
         //returns new id to be assigned to new location
@@ -510,9 +519,7 @@ namespace Bisimulation_Desktop
                     ndLocation = item.Value;
                     template = (from t in model.Template where t.Name.Text == item.Key select t).First();
                     model.Template.Remove(template);
-
                     template = AddNewLocation(ndLocation,template);
-
                     model.Template.Add(template);
                 }
             }
@@ -526,20 +533,24 @@ namespace Bisimulation_Desktop
             {
                 string existingTargetid;
                 string newId;
+                Location targetLocation;
                 Location committedLocation;
                 Transition transition;;
                 for( int i = 0; i < template.Transition.Count; i++)
                 {
                     existingTargetid = string.Empty;
                     newId = string.Empty;
-                    if(template.Transition[i].Source.Ref == location.Id)
+                    if(template.Transition[i].Source.Ref == location.Id) 
                     {
+                        targetLocation = (from l in template.Location where l.Id == template.Transition[i].Target.Ref select l).First();
                         existingTargetid = template.Transition[i].Target.Ref; //save target of the existing transition
                         newId = GetNewLocationId(); //get new id from id list for new location
                         committedLocation = new Location(); //initialize new location
                         committedLocation.Id = newId;
                         committedLocation.Committed = "committed";
-
+                        Tuple<string, string> coordinates = GetCoordinatesForLocation(location, targetLocation);
+                        committedLocation.X = coordinates.Item1;
+                        committedLocation.Y = coordinates.Item2;
                         template.Transition[i].Target.Ref = newId; //set target of existing transition as the id of new location
                         
                         transition = new Transition(); //initialize new transition
@@ -557,6 +568,27 @@ namespace Bisimulation_Desktop
                 }
             }
             return template;
+        }
+
+        // Get source and target location and calculates the middle coordinates for X,Y with fraction 0.5 and returns new coordinates in a Tuple 
+        private Tuple<string,string> GetCoordinatesForLocation(Location sourceLoc, Location targetLoc)
+        {
+            string X = string.Empty, Y = string.Empty;
+
+            int sourceX = Int32.Parse(sourceLoc.X);
+            int sourceY = Int32.Parse(sourceLoc.Y);
+            int targetX = Int32.Parse(targetLoc.X);
+            int targetY = Int32.Parse(targetLoc.Y);
+            X = Convert.ToString(sourceX + (0.5) * (targetX - sourceX));
+            Y = Convert.ToString(sourceY + (0.5) * (targetY - sourceY));
+
+            //****** TODO : Remove ************************************************
+            //richTextBox1.AppendText("Source Id : " + sourceLoc.Id + ", Target Id : " + targetLoc.Id + "\n");
+            //richTextBox1.AppendText("Srouce X : " + sourceLoc.X + ", Target X : " + targetLoc.X + ", Center : " + X + "\n");
+            //richTextBox1.AppendText("Srouce Y : " + sourceLoc.Y + ", Target Y : " + targetLoc.Y + ", Center : " + Y + "\n");
+            //*********************************************************************
+
+            return Tuple.Create(X, Y);
         }
     }
 }
