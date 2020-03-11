@@ -16,6 +16,9 @@ namespace Bisimulation_Desktop
         string filePath2 { get; set; }
 
         List<int> locationIds = new List<int>();
+        List<int> inChannelIds = new List<int>();
+        List<int> outChannelIds = new List<int>();
+        List<int> ndChannelIds = new List<int>();
         public Main()
         {
             InitializeComponent();
@@ -56,7 +59,7 @@ namespace Bisimulation_Desktop
             return "";
         }
 
-        private void model_transform_Click(object sender, EventArgs e)
+        private void model_Transform_Click(object sender, EventArgs e)
         {
             richTextBox1.Clear();
             if (string.IsNullOrEmpty(filePath))
@@ -328,7 +331,7 @@ namespace Bisimulation_Desktop
             return model2;
         }
 
-        //Merge model2 into model1, templates and system properties and returns model1
+        //Merge model2 into model1, templates, global declarations and system properties and returns model1
         private Nta MergeModels(Nta model1, Nta model2)
         {
             // 1. Merge templates of model2 in model1
@@ -337,12 +340,18 @@ namespace Bisimulation_Desktop
                 model1.Template.Add(template);
             }
 
-            // 2. Merge system properties of model2 in model1
+            // 2. Merge global declarations
+
+            model1.Declaration = model1.Declaration + "\n\n//Model2 declarations \n" + model2.Declaration;
+
+            // 3. Merge system properties of model2 in model1
             
             //******* Remove system statement from model2 system so that 
             //rest of the text can be added to model1 system ******
             string systemProperties2 = @model2.System;
             int startPosition = systemProperties2.IndexOf("\nsystem");
+            if(startPosition < 0)
+                startPosition = systemProperties2.IndexOf("system");
             int endPosition = systemProperties2.IndexOf(";", startPosition);
             string systemStatement = systemProperties2.Substring(startPosition, (endPosition - startPosition)+1);
             systemProperties2 = systemProperties2.Replace(systemStatement, "");
@@ -352,6 +361,8 @@ namespace Bisimulation_Desktop
             //and also append rest of the text in system tag of model2 into model1 system tag ***
             string systemProperties1 = @model1.System;
             startPosition = systemProperties1.IndexOf("\nsystem");
+            if(startPosition < 0)
+                startPosition = systemProperties1.IndexOf("system");
             endPosition = systemProperties1.IndexOf(";", startPosition);
             systemStatement = systemProperties1.Substring(startPosition, (endPosition - startPosition)+1);
             systemProperties1 = systemProperties1.Replace(systemStatement, "");
@@ -369,7 +380,7 @@ namespace Bisimulation_Desktop
             return model1;
         }
         
-        //checks if channel is In or Out
+        //Checks if channel is In or Out
         private bool IsChannelBroadcaster(string channelName)
         {
             if (channelName.LastIndexOf('!') == channelName.Length-1)
@@ -386,19 +397,37 @@ namespace Bisimulation_Desktop
             }
         }
 
-        // Gets String and returns an integer number from the string
+        //Gets String and returns an integer number from the string
         private int GetNumberFromString(string id)
         {
             return Int32.Parse(Regex.Match(id, @"\d+").Value);
         }
 
-        //returns new id to be assigned to new location
+        //Returns new id to be assigned to new location
         private string GetNewLocationId()
         {
             return ("id" + Convert.ToString(locationIds.Count > 0 ? (locationIds.Max() + 1) : 0));
         }
 
-        //identifies non-deterministic locations and returns a list for a given template
+        //Returns new id to be assigned to input channel
+        private string GetNewInChannelId()
+        {
+            return ("in_" + Convert.ToString(inChannelIds.Count > 0 ? (inChannelIds.Max() + 1) : 0));
+        }
+
+        //Returns new id to be assigned to output channel
+        private string GetNewOutChannelId()
+        {
+            return ("out_" + Convert.ToString(outChannelIds.Count > 0 ? (outChannelIds.Max() + 1) : 0));
+        }
+
+        //Returns new id to be assigned to channels for Nd locations/transitions
+        private string GetNewndChannelId()
+        {
+            return ("nd_" + Convert.ToString(ndChannelIds.Count > 0 ? (ndChannelIds.Max() + 1) : 0));
+        }
+
+        //Identifies non-deterministic locations and returns a list for a given template
         private NdLocation AddNdLocationsByTemplate(Template template)
         {
             NdLocation ndLocation = new NdLocation();
@@ -417,7 +446,7 @@ namespace Bisimulation_Desktop
             return ndLocation;
         }
 
-        // prints the model in xml format
+        //Prints the model in xml format
         private void PrintXML(string path)
         {
             SetLoading(true);
@@ -481,7 +510,7 @@ namespace Bisimulation_Desktop
             SetLoading(false);
         }
 
-        //set cursor to loading while some operation is taking place
+        //Set cursor to loading while some operation is taking place
         private void SetLoading(bool displayLoader)
         {
             if (displayLoader)
@@ -529,54 +558,78 @@ namespace Bisimulation_Desktop
         //Add committed locations for non-deterministic locations for a given template
         private Template AddNewLocation(NdLocation ndLocation, Template template)
         {
-            foreach(Location location in ndLocation.getNdLocations())
+            string existingSourceid;
+            string newId;
+            Location targetLocation;
+            Location committedLocation;
+            Transition transition;
+            List<Transition> newTransitions = new List<Transition>();
+            List<Location> newLocations = new List<Location>();
+            foreach (Location location in ndLocation.getNdLocations())
             {
-                string existingTargetid;
-                string newId;
-                Location targetLocation;
-                Location committedLocation;
-                Transition transition;;
                 for( int i = 0; i < template.Transition.Count; i++)
                 {
-                    existingTargetid = string.Empty;
+                    existingSourceid = string.Empty;
                     newId = string.Empty;
                     if(template.Transition[i].Source.Ref == location.Id) 
                     {
                         targetLocation = (from l in template.Location where l.Id == template.Transition[i].Target.Ref select l).First();
-                        existingTargetid = template.Transition[i].Target.Ref; //save target of the existing transition
+                        existingSourceid = template.Transition[i].Source.Ref; //save source of the existing transition
+                        
+                        // Create new committed location **********
                         newId = GetNewLocationId(); //get new id from id list for new location
                         committedLocation = new Location(); //initialize new location
                         committedLocation.Id = newId;
                         committedLocation.Committed = "committed";
-                        Tuple<string, string> coordinates = GetCoordinatesForLocation(location, targetLocation);
+                        Tuple<string, string> coordinates = GetCoordinatesForLocation(location, targetLocation, template.Transition[i]);
                         committedLocation.X = coordinates.Item1;
                         committedLocation.Y = coordinates.Item2;
-                        template.Transition[i].Target.Ref = newId; //set target of existing transition as the id of new location
-                        
+                        //*****************************************
+
+                        locationIds.Add(Int32.Parse(Regex.Match(newId, @"\d+").Value)); // add new id to the location id list
+
+                        template.Transition[i].Source.Ref = newId; //set source of existing transition as the id of new location
+
+                        // Add new transition from Source *********
                         transition = new Transition(); //initialize new transition
                         transition.Source = new Source(); 
                         transition.Target = new Target();
-
-                        transition.Source.Ref = newId; //set transition source as the id of the new location
-                        transition.Target.Ref = existingTargetid; // set target as the target of existing transition
-
-                        locationIds.Add(Int32.Parse(Regex.Match(newId, @"\d+").Value)); // add new id to the location id list
+                        //*****************************************
                         
-                        template.Location.Add(committedLocation); //add new location in the template              
-                        template.Transition.Add(transition); //add new transition in the template
+                        transition.Source.Ref = existingSourceid; //set new transition source as the existing source location id
+                        transition.Target.Ref = newId; // set target as the new location id
+
+                        newLocations.Add(committedLocation);
+                        newTransitions.Add(transition);
+                        //template.Location.Add(committedLocation); //add new location in the template              
+                        //template.Transition.Add(transition); //add new transition in the template
                     }
                 }
             }
+            if (newLocations.Count > 0)
+                template.Location.AddRange(newLocations);
+            if (newTransitions.Count > 0)
+                template.Transition.AddRange(newTransitions);
             return template;
         }
 
-        // Get source and target location and calculates the middle coordinates for X,Y with fraction 0.5 and returns new coordinates in a Tuple 
-        private Tuple<string,string> GetCoordinatesForLocation(Location sourceLoc, Location targetLoc)
+        //Get source and target location and calculates the middle coordinates for X,Y with fraction 0.5 and returns new coordinates in a Tuple 
+        private Tuple<string,string> GetCoordinatesForLocation(Location sourceLoc, Location targetLoc, Transition sourceTransition)
         {
             string X = string.Empty, Y = string.Empty;
-
-            int sourceX = Int32.Parse(sourceLoc.X);
-            int sourceY = Int32.Parse(sourceLoc.Y);
+            int sourceX, sourceY;
+            Nail nail;
+            if (sourceTransition != null && sourceTransition.Nail != null && sourceTransition.Nail.Count > 0) // if true then take the center point between source location and first nail
+            {
+                nail = sourceTransition.Nail[0];
+                sourceX = Int32.Parse(nail.X);
+                sourceY = Int32.Parse(nail.Y);
+            }
+            else // otherwise take the center point between source and target location
+            {
+                sourceX = Int32.Parse(sourceLoc.X);
+                sourceY = Int32.Parse(sourceLoc.Y);
+            }
             int targetX = Int32.Parse(targetLoc.X);
             int targetY = Int32.Parse(targetLoc.Y);
             X = Convert.ToString(sourceX + (0.5) * (targetX - sourceX));
