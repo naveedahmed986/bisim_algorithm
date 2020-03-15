@@ -69,9 +69,9 @@
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(1029, 17);
+            this.button3.Location = new System.Drawing.Point(1029, 9);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(231, 95);
+            this.button3.Size = new System.Drawing.Size(231, 103);
             this.button3.TabIndex = 4;
             this.button3.Text = "Transform Model";
             this.button3.UseVisualStyleBackColor = true;
