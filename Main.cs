@@ -13,7 +13,6 @@ namespace Bisimulation_Desktop
         string filePath { get; set; }
         string filePath2 { get; set; }
 
-        List<int> locationIds = new List<int>();
         public Main()
         {
             InitializeComponent();
@@ -54,33 +53,6 @@ namespace Bisimulation_Desktop
             return "";
         }
 
-        private void model_Transform_Click(object sender, EventArgs e)
-        {
-            richTextBox1.Clear();
-            if (string.IsNullOrEmpty(filePath))
-            {
-                pathLabel.ForeColor = Color.Red;
-                pathLabel.Text = "File not found. Please open a file (.xml)";
-            }
-            //else if (string.IsNullOrEmpty(filePath2))
-            //{
-            //    pathLabel2.ForeColor = Color.Red;
-            //    pathLabel2.Text = "File not found. Please open a file (.xml)";
-            //}
-            else
-            {
-                SetLoading(true);
-                Nta model = TransformModels();
-                if (ConvertModel.NtatoXML(model))
-                {
-                    richTextBox1.ForeColor = Color.Black;
-                    richTextBox1.Text = "File saved at : " + Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                    richTextBox1.AppendText("\n\nFile name : bi_model.xml");
-                }
-                SetLoading(false);
-            }
-        }
-
         private void parseSelection_SelectedIndexChange(object sender, EventArgs e)
         {
             if (parseSelection.SelectedIndex == 0)
@@ -109,6 +81,96 @@ namespace Bisimulation_Desktop
             }
         }
 
+        //Prints the model in xml format
+        private void PrintXML(string path)
+        {
+            SetLoading(true);
+            richTextBox1.Clear();
+            if (!string.IsNullOrEmpty(path))
+            {
+                XmlTextReader reader = new XmlTextReader(path);
+                while (reader.Read())
+                {
+                    switch (reader.NodeType)
+                    {
+                        case XmlNodeType.Element: // The node is an element.
+
+                            this.richTextBox1.SelectionColor = Color.Blue;
+
+                            this.richTextBox1.AppendText("<");
+
+                            this.richTextBox1.SelectionColor = Color.Brown;
+
+                            this.richTextBox1.AppendText(reader.Name);
+
+                            this.richTextBox1.SelectionColor = Color.Green;
+
+                            while (reader.MoveToNextAttribute())
+                                richTextBox1.AppendText(" " + reader.Name + "='" + reader.Value + "'");
+
+                            this.richTextBox1.SelectionColor = Color.Blue;
+
+                            this.richTextBox1.AppendText(">");
+
+                            break;
+
+                        case XmlNodeType.Text: //Display the text in each element.
+
+                            this.richTextBox1.SelectionColor = Color.Black;
+
+                            this.richTextBox1.AppendText(reader.Value);
+
+                            break;
+
+                        case XmlNodeType.EndElement: //Display the end of the element.
+
+                            this.richTextBox1.SelectionColor = Color.Blue;
+
+                            this.richTextBox1.AppendText("</");
+
+                            this.richTextBox1.SelectionColor = Color.Brown;
+
+                            this.richTextBox1.AppendText(reader.Name);
+
+                            this.richTextBox1.SelectionColor = Color.Blue;
+
+                            this.richTextBox1.AppendText(">");
+
+                            this.richTextBox1.AppendText("\n");
+
+                            break;
+                    }
+                }
+            }
+            SetLoading(false);
+        }
+
+        private void modelTransform_Click(object sender, EventArgs e)
+        {
+            richTextBox1.Clear();
+            if (string.IsNullOrEmpty(filePath))
+            {
+                pathLabel.ForeColor = Color.Red;
+                pathLabel.Text = "File not found. Please open a file (.xml)";
+            }
+            //else if (string.IsNullOrEmpty(filePath2))
+            //{
+            //    pathLabel2.ForeColor = Color.Red;
+            //    pathLabel2.Text = "File not found. Please open a file (.xml)";
+            //}
+            else
+            {
+                SetLoading(true);
+                Nta model = TransformModels();
+                if (ConvertModel.NtatoXML(model))
+                {
+                    richTextBox1.ForeColor = Color.Black;
+                    richTextBox1.Text = "File saved at : " + Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                    richTextBox1.AppendText("\n\nFile name : bi_model.xml");
+                }
+                SetLoading(false);
+            }
+        }
         /*
          * Get all channels based template-wise
          * Function calls to calculate non-deterministic locations and transitions
@@ -134,10 +196,8 @@ namespace Bisimulation_Desktop
                 //}
                 //************************************************
 
-                Channel channelInfo;
+                ChannelInfo channelInfo;
                 bool hasSelectLabel = false;
-
-                Dictionary<string, Channel> channels = new Dictionary<string, Channel>();
 
                 Dictionary<string, NdLocation> ndLocationList = new Dictionary<string, NdLocation>();
                 NdLocation ndLocations = new NdLocation();
@@ -150,60 +210,63 @@ namespace Bisimulation_Desktop
                     foreach (Template template in model1.Template) // Loop over all templates
                     {
                         // List of Ids of all locations in the model
-                        AddLocationsIds(template);
+                        LocationInfo.AddLocationsIds(template);
                         //***********************************
 
+                        ChannelInfo.AddChannelInfo(template);
                         // List of all non-deterministic locations in the model template wise
-                        ndLocations = AddNdLocationsByTemplate(template);
+                        //ndLocations = AddNdLocationsByTemplate(template);
 
-                        if (ndLocations.getNdLocations().Count > 0)
-                            ndLocationList.Add(template.Name.Text, ndLocations);
+                        //if (ndLocations.getNdLocations().Count > 0)
+                        //    ndLocationList.Add(template.Name.Text, ndLocations);
                         //***********************************
 
                         // List of all channels in a custom structure template wise
-                        channelInfo = new Channel();
-                        ndTransitions = new NdTransition();
-                        hasSelectLabel = false;
-                        for (int i = 0; i < template.Transition.Count; i++) // Loop over all transitions in each template
-                        {
-                            for (int j = 0; j < template.Transition[i].Label.Count; j++) // Loop over all labels in each transition
-                            {
-                                if (template.Transition[i].Label[j].Kind == "select")
-                                    hasSelectLabel = true;
-                                if (template.Transition[i].Label[j].Kind == "synchronisation")
-                                {
-                                    string channelName = template.Transition[i].Label[j].Text;
-                                    if (!string.IsNullOrEmpty(channelName) && !string.IsNullOrWhiteSpace(channelName))
-                                    {
-                                        channelName = channelName.Substring(0, channelName.Length - 1);
-                                        if (channels.ContainsKey(channelName))
-                                        {
-                                            channelInfo = channels[channelName];
-                                            channelInfo.AddChannelInfo(template.Name.Text, IsChannelBroadcaster(template.Transition[i].Label[j].Text),
-                                                template.Transition[i].Source.Ref, template.Transition[i].Target.Ref);
-                                        }
-                                        else
-                                        {
-                                            channelInfo.AddChannelInfo(template.Name.Text, IsChannelBroadcaster(template.Transition[i].Label[j].Text),
-                                                template.Transition[i].Source.Ref, template.Transition[i].Target.Ref);
-                                            channels.Add(channelName, channelInfo);
-                                        }
-                                    }
-                                }
-                            }
+                        //ndTransitions = new NdTransition();
+                        //hasSelectLabel = false;
+                        //for (int i = 0; i < template.Transition.Count; i++) // Loop over all transitions in each template
+                        //{
+                        //    for (int j = 0; j < template.Transition[i].Label.Count; j++) // Loop over all labels in each transition
+                        //    {
+                        //        if (template.Transition[i].Label[j].Kind == "select")
+                        //            hasSelectLabel = true;
+                        //        if (template.Transition[i].Label[j].Kind == "synchronisation")
+                        //        {
+                        //            string channelName = template.Transition[i].Label[j].Text;
+                        //            if (!string.IsNullOrEmpty(channelName) && !string.IsNullOrWhiteSpace(channelName))
+                        //            {
+                        //                channelName = channelName.Substring(0, channelName.Length - 1);
+                        //                if (channels.ContainsKey(channelName))
+                        //                {
+                        //                    channelInfo = channels[channelName];
+                        //                    channelInfo.AddChannelInfo(template.Name.Text, IsChannelBroadcaster(template.Transition[i].Label[j].Text),
+                        //                        template.Transition[i].Source.Ref, template.Transition[i].Target.Ref);
+                        //                }
+                        //                else
+                        //                {
+                        //                    channelInfo.AddChannelInfo(template.Name.Text, IsChannelBroadcaster(template.Transition[i].Label[j].Text),
+                        //                        template.Transition[i].Source.Ref, template.Transition[i].Target.Ref);
+                        //                    channels.Add(channelName, channelInfo);
+                        //                }
+                        //            }
+                        //        }
+                        //    }
 
-                            // Add transitions with select kind lable in ndTransitions
-                            if (hasSelectLabel)
-                                ndTransitions.AddNdTransition(template.Transition[i]);
+                        //    // Add transitions with select kind lable in ndTransitions
+                        //    if (hasSelectLabel)
+                        //        ndTransitions.AddNdTransition(template.Transition[i]);
 
-                        }
-                        if (ndTransitions.getNdTransitions().Count > 0)
-                            ndTransitionList.Add(template.Name.Text, ndTransitions);
-                        //**********************************************************
+                        //}
+                        //if (ndTransitions.getNdTransitions().Count > 0)
+                        //    ndTransitionList.Add(template.Name.Text, ndTransitions);
+                        ////**********************************************************
                     }
                 }
 
-                Nta modelx = AddAuxilaryForNdLocation(ndLocationList, model1);
+                //model1 = AddAuxilaryForNdLocation(ndLocationList, model1);
+                model1 = AuxilaryChannel.AddAuxForIO(model1);
+                //********** TODO : Remove ***********************
+
                 //List<Template> templates = model1.Template;
 
                 //IEnumerable<Template> template1 = from t in templates where t.Name.Text == "machine" select t;
@@ -212,31 +275,30 @@ namespace Bisimulation_Desktop
                 //List<string> myList = new List<string>();
                 //string result = myList.Where(s => s == search);
 
-                //********** TODO : Remove ***********************
-                //if (channels.Count > 0)
-                //{
-                //    richTextBox1.Clear();
-                //    foreach (var ch in channels)
-                //    {
-                //        richTextBox1.AppendText("Channel : " + ch.Key + "\n\n");
-                //        richTextBox1.AppendText("TemplateName\t\tIsBroadcaster\t\tSourceId\t\tTargetId\n");
-                //        if (ch.Value.GetChannels().Count > 0)
-                //        {
-                //            foreach (var info in ch.Value.GetChannels())
-                //            {
-                //                richTextBox1.AppendText(info.Item1 + "\t\t\t");
-                //                richTextBox1.AppendText(info.Item2 + "\t\t\t");
-                //                richTextBox1.AppendText(info.Item3 + "\t\t");
-                //                richTextBox1.AppendText(info.Item4 + "\n\n");
-                //            }
-                //        }
-                //    }
-                //}
-                //else
-                //    richTextBox1.Text = "No channels found in the model";
+                if (ChannelInfo.channelInfoList.Count > 0)
+                {
+                    richTextBox1.Clear();
+                    foreach (var ch in ChannelInfo.channelInfoList)
+                    {
+                        richTextBox1.AppendText("Channel : " + ch.Key + "\n\n");
+                        richTextBox1.AppendText("TemplateName\t\tIsBroadcaster\t\tSourceId\t\tTargetId\n");
+                        if (ch.Value.Count > 0)
+                        {
+                            foreach (var info in ch.Value)
+                            {
+                                richTextBox1.AppendText(info.Item1 + "\t\t\t");
+                                richTextBox1.AppendText(info.Item2 + "\t\t\t");
+                                richTextBox1.AppendText(info.Item3 + "\t\t");
+                                richTextBox1.AppendText(info.Item4 + "\n\n");
+                            }
+                        }
+                    }
+                }
+                else
+                    richTextBox1.Text = "No channels found in the model";
                 //richTextBox1.Text = GetNewLocationId();
                 //*********************************************
-                return modelx;
+                return model1;
             }
             catch (Exception ex)
             {
@@ -332,35 +394,6 @@ namespace Bisimulation_Desktop
             model1.System = systemProperties1;
             return model1;
         }
-        
-        //Checks if channel is input or output to the SUT
-        private bool IsChannelBroadcaster(string channelName)
-        {
-            if (channelName.LastIndexOf('!') == channelName.Length-1)
-                return true;
-            return false;
-        }
-
-        //Keeps track of locationId in the whole model to avoid duplications
-        private void AddLocationsIds(Template template)
-        {
-            for (int x = 0; x < template.Location.Count; x++)
-            {
-                locationIds.Add(GetNumberFromString(template.Location[x].Id));
-            }
-        }
-
-        //Gets String and returns an integer number from the string
-        private int GetNumberFromString(string id)
-        {
-            return Int32.Parse(Regex.Match(id, @"\d+").Value);
-        }
-
-        //Returns new id to be assigned to new location
-        private string GetNewLocationId()
-        {
-            return ("id" + Convert.ToString(locationIds.Count > 0 ? (locationIds.Max() + 1) : 0));
-        }
 
         //Identifies non-deterministic locations and returns a list for a given template
         private NdLocation AddNdLocationsByTemplate(Template template)
@@ -379,70 +412,6 @@ namespace Bisimulation_Desktop
                     ndLocation.AddNdLocation(location);
             }
             return ndLocation;
-        }
-
-        //Prints the model in xml format
-        private void PrintXML(string path)
-        {
-            SetLoading(true);
-            richTextBox1.Clear();
-            if (!string.IsNullOrEmpty(path))
-            {
-                XmlTextReader reader = new XmlTextReader(path);
-                while (reader.Read())
-                {
-                    switch (reader.NodeType)
-                    {
-                        case XmlNodeType.Element: // The node is an element.
-
-                            this.richTextBox1.SelectionColor = Color.Blue;
-
-                            this.richTextBox1.AppendText("<");
-
-                            this.richTextBox1.SelectionColor = Color.Brown;
-
-                            this.richTextBox1.AppendText(reader.Name);
-
-                            this.richTextBox1.SelectionColor = Color.Green;
-
-                            while (reader.MoveToNextAttribute())
-                                richTextBox1.AppendText(" " + reader.Name + "='" + reader.Value + "'");
-
-                            this.richTextBox1.SelectionColor = Color.Blue;
-
-                            this.richTextBox1.AppendText(">");
-
-                            break;
-
-                        case XmlNodeType.Text: //Display the text in each element.
-
-                            this.richTextBox1.SelectionColor = Color.Black;
-
-                            this.richTextBox1.AppendText(reader.Value);
-
-                            break;
-
-                        case XmlNodeType.EndElement: //Display the end of the element.
-
-                            this.richTextBox1.SelectionColor = Color.Blue;
-
-                            this.richTextBox1.AppendText("</");
-
-                            this.richTextBox1.SelectionColor = Color.Brown;
-
-                            this.richTextBox1.AppendText(reader.Name);
-
-                            this.richTextBox1.SelectionColor = Color.Blue;
-
-                            this.richTextBox1.AppendText(">");
-
-                            this.richTextBox1.AppendText("\n");
-
-                            break;
-                    }
-                }
-            }
-            SetLoading(false);
         }
 
         //Set cursor to loading while some operation is taking place
@@ -512,16 +481,16 @@ namespace Bisimulation_Desktop
                         existingTargetid = template.Transition[i].Target.Ref; //save target of the existing transition
                         
                         // Create new committed location **********
-                        newId = GetNewLocationId(); //get new id from id list for new location
+                        newId = LocationInfo.GetNewLocationId(); //get new id from id list for new location
                         committedLocation = new Location(); //initialize new location
                         committedLocation.Id = newId;
                         committedLocation.Committed = "committed";
-                        Tuple<string, string> coordinates = GetCoordinatesForLocation(ndLoc, targetLocation, template.Transition[i]);
+                        Tuple<string, string> coordinates = LocationPoint.GetCoordinatesForLocation(ndLoc, targetLocation, template.Transition[i]);
                         committedLocation.X = coordinates.Item1;
                         committedLocation.Y = coordinates.Item2;
                         //*****************************************
 
-                        locationIds.Add(Int32.Parse(Regex.Match(newId, @"\d+").Value)); // add new id to the location id list
+                        LocationInfo.locationIds.Add(Int32.Parse(Regex.Match(newId, @"\d+").Value)); // add new id to the location id list
 
                         template.Transition[i].Target.Ref = newId; //set target of existing transition as the id of new location
 
@@ -547,36 +516,6 @@ namespace Bisimulation_Desktop
                 template.Transition.AddRange(newTransitions);
             return template;
         }
-
-        //Get source and target location and calculates the middle coordinates for X,Y with fraction 0.5 and returns new coordinates in a Tuple 
-        private Tuple<string,string> GetCoordinatesForLocation(Location sourceLoc, Location targetLoc, Transition sourceTransition)
-        {
-            string X = string.Empty, Y = string.Empty;
-            int sourceX, sourceY;
-            Nail nail;
-            if (sourceTransition != null && sourceTransition.Nail != null && sourceTransition.Nail.Count > 0) // if true then take the center point between source location and first nail
-            {
-                nail = sourceTransition.Nail[sourceTransition.Nail.Count-1];
-                sourceX = Int32.Parse(nail.X);
-                sourceY = Int32.Parse(nail.Y);
-            }
-            else // otherwise take the center point between source and target location
-            {
-                sourceX = Int32.Parse(sourceLoc.X);
-                sourceY = Int32.Parse(sourceLoc.Y);
-            }
-            int targetX = Int32.Parse(targetLoc.X);
-            int targetY = Int32.Parse(targetLoc.Y);
-            X = Convert.ToString(sourceX + (0.5) * (targetX - sourceX));
-            Y = Convert.ToString(sourceY + (0.5) * (targetY - sourceY));
-
-            //****** TODO : Remove ************************************************
-            //richTextBox1.AppendText("Source Id : " + sourceLoc.Id + ", Target Id : " + targetLoc.Id + "\n");
-            //richTextBox1.AppendText("Srouce X : " + sourceLoc.X + ", Target X : " + targetLoc.X + ", Center : " + X + "\n");
-            //richTextBox1.AppendText("Srouce Y : " + sourceLoc.Y + ", Target Y : " + targetLoc.Y + ", Center : " + Y + "\n");
-            //*********************************************************************
-
-            return Tuple.Create(X, Y);
-        }
+  
     }
 }

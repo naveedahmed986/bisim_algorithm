@@ -75,7 +75,7 @@
             this.button3.TabIndex = 4;
             this.button3.Text = "Transform Model";
             this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.model_Transform_Click);
+            this.button3.Click += new System.EventHandler(this.modelTransform_Click);
             // 
             // button4
             // 
