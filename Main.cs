@@ -187,117 +187,46 @@ namespace Bisimulation_Desktop
                     model1 = MergeModels(model1, model2);
                 }
 
-                //********** TODO : Remove ***********************
-                //richTextBox1.Clear();
-                //richTextBox1.AppendText("\n");
-                //for (int x = 0; x < model1.Template.Count; x++)
-                //{
-                //    richTextBox1.AppendText(model1.Template[x].Name.Text + "\n");
-                //}
-                //************************************************
-
-                ChannelInfo channelInfo;
-                bool hasSelectLabel = false;
-
-                Dictionary<string, NdLocation> ndLocationList = new Dictionary<string, NdLocation>();
-                NdLocation ndLocations = new NdLocation();
-
-                Dictionary<string, NdTransition> ndTransitionList = new Dictionary<string, NdTransition>();
-                NdTransition ndTransitions;
-
                 if (model1 != null)
                 {
+                    Dictionary<string, NdLocation> ndLocationList = new Dictionary<string, NdLocation>();
+                    NdLocation ndLList;
+
+                    Dictionary<string, NdTransition> ndTransitionList = new Dictionary<string, NdTransition>();
+                    NdTransition ndTList;
+
                     foreach (Template template in model1.Template) // Loop over all templates
                     {
                         // List of Ids of all locations in the model
                         LocationInfo.AddLocationsIds(template);
                         //***********************************
 
-                        ChannelInfo.AddChannelInfoByTemplate(template);
-                        // List of all non-deterministic locations in the model template wise
-                        //ndLocations = AddNdLocationsByTemplate(template);
-
-                        //if (ndLocations.getNdLocations().Count > 0)
-                        //    ndLocationList.Add(template.Name.Text, ndLocations);
-                        //***********************************
-
                         // List of all channels in a custom structure template wise
-                        //ndTransitions = new NdTransition();
-                        //hasSelectLabel = false;
-                        //for (int i = 0; i < template.Transition.Count; i++) // Loop over all transitions in each template
-                        //{
-                        //    for (int j = 0; j < template.Transition[i].Label.Count; j++) // Loop over all labels in each transition
-                        //    {
-                        //        if (template.Transition[i].Label[j].Kind == "select")
-                        //            hasSelectLabel = true;
-                        //        if (template.Transition[i].Label[j].Kind == "synchronisation")
-                        //        {
-                        //            string channelName = template.Transition[i].Label[j].Text;
-                        //            if (!string.IsNullOrEmpty(channelName) && !string.IsNullOrWhiteSpace(channelName))
-                        //            {
-                        //                channelName = channelName.Substring(0, channelName.Length - 1);
-                        //                if (channels.ContainsKey(channelName))
-                        //                {
-                        //                    channelInfo = channels[channelName];
-                        //                    channelInfo.AddChannelInfo(template.Name.Text, IsChannelBroadcaster(template.Transition[i].Label[j].Text),
-                        //                        template.Transition[i].Source.Ref, template.Transition[i].Target.Ref);
-                        //                }
-                        //                else
-                        //                {
-                        //                    channelInfo.AddChannelInfo(template.Name.Text, IsChannelBroadcaster(template.Transition[i].Label[j].Text),
-                        //                        template.Transition[i].Source.Ref, template.Transition[i].Target.Ref);
-                        //                    channels.Add(channelName, channelInfo);
-                        //                }
-                        //            }
-                        //        }
-                        //    }
-
-                        //    // Add transitions with select kind lable in ndTransitions
-                        //    if (hasSelectLabel)
-                        //        ndTransitions.AddNdTransition(template.Transition[i]);
-
-                        //}
-                        //if (ndTransitions.getNdTransitions().Count > 0)
-                        //    ndTransitionList.Add(template.Name.Text, ndTransitions);
-                        ////**********************************************************
+                        ChannelInfo.AddChannelInfoByTemplate(template);
+                        //***********************************
                     }
-                }
 
-                //model1 = AddAuxilaryForNdLocation(ndLocationList, model1);
-                model1 = AuxilaryChannel.AddAuxForIOAction(model1);
-                //********** TODO : Remove ***********************
+                    // Add auxilary channels for all I/O actions in the model
+                    model1 = AuxilaryChannel.AddAuxForIOAction(model1);
+                    //***********************************
 
-                //List<Template> templates = model1.Template;
-
-                //IEnumerable<Template> template1 = from t in templates where t.Name.Text == "machine" select t;
-
-                //string search = "lookforme";
-                //List<string> myList = new List<string>();
-                //string result = myList.Where(s => s == search);
-
-                if (ChannelInfo.channelInfoList.Count > 0)
-                {
-                    richTextBox1.Clear();
-                    foreach (var ch in ChannelInfo.channelInfoList)
+                    foreach (Template template in model1.Template)
                     {
-                        richTextBox1.AppendText("Channel : " + ch.Key + "\n\n");
-                        richTextBox1.AppendText("TemplateName\t\tIsBroadcaster\t\tSourceId\t\tTargetId\n");
-                        if (ch.Value.Count > 0)
-                        {
-                            foreach (var info in ch.Value)
-                            {
-                                richTextBox1.AppendText(info.Item1 + "\t\t\t");
-                                richTextBox1.AppendText(info.Item2 + "\t\t\t");
-                                richTextBox1.AppendText(info.Item3 + "\t\t");
-                                richTextBox1.AppendText(info.Item4 + "\n\n");
-                            }
-                        }
+                        ndTList = new NdTransition();
+                        ndLList = new NdLocation();
+
+                        ndTList = AddNdTransitionByTemplate(template);
+                        if (ndTList.ndTransitions.Count > 0)
+                            ndTransitionList.Add(template.Name.Text, ndTList);
+
+                        ndLList = AddNdLocationsByTemplate(template);
+                        if (ndLList.ndLocations.Count > 0)
+                            ndLocationList.Add(template.Name.Text, ndLList);
                     }
+
+                    model1 = AddAuxilaryForNdLocation(ndLocationList, model1);
+
                 }
-                else
-                    richTextBox1.Text = "No channels found in the model";
-                //richTextBox1.Text = GetNewLocationId();
-                //*********************************************
                 return model1;
             }
             catch (Exception ex)
@@ -398,20 +327,37 @@ namespace Bisimulation_Desktop
         //Identifies non-deterministic locations and returns a list for a given template
         private NdLocation AddNdLocationsByTemplate(Template template)
         {
-            NdLocation ndLocation = new NdLocation();
+            NdLocation list = new NdLocation();
             int transitionSourceCount;
-            foreach(Location location in template.Location)
+            foreach (Location location in template.Location)
             {
                 transitionSourceCount = 0;
-                foreach(Transition transition in template.Transition)
+                foreach (Transition transition in template.Transition)
                 {
-                    if (string.Compare (transition.Source.Ref,location.Id) == 0)
+                    if (string.Compare(transition.Source.Ref, location.Id) == 0)
                         transitionSourceCount++;
                 }
                 if (transitionSourceCount > 1)
-                    ndLocation.AddNdLocation(location);
+                    list.ndLocations.Add(location);
             }
-            return ndLocation;
+            return list;
+        }
+
+        //Identifies non-deterministic transitions and returns a list for a given template
+        private NdTransition AddNdTransitionByTemplate(Template template)
+        {
+            NdTransition list = new NdTransition(); 
+            foreach (Transition transition in template.Transition)
+            {
+                foreach (Label label in transition.Label)
+                {
+                    if (label.Kind == Common.TransitionLabelKind.Select)
+                    {
+                        list.ndTransitions.Add(transition);
+                    }
+                }
+            }
+            return list;
         }
 
         //Set cursor to loading while some operation is taking place
@@ -439,20 +385,20 @@ namespace Bisimulation_Desktop
          * Get the non-deterministic locations with template names and the processed merged model
          * Retruns the models with modified templates
          */
-        private Nta AddAuxilaryForNdLocation(Dictionary<string,NdLocation> ndLocationList, Nta model)
+        private Nta AddAuxilaryForNdLocation(Dictionary<string, NdLocation> ndLocationList, Nta model)
         {
             Template template;
             NdLocation ndLocation;
             string templateName = string.Empty;
             if (ndLocationList != null && ndLocationList.Count > 0)
             {
-                foreach(var item in ndLocationList)
+                foreach (var item in ndLocationList)
                 {
                     templateName = item.Key;
                     ndLocation = item.Value;
                     template = (from t in model.Template where t.Name.Text == item.Key select t).First();
                     model.Template.Remove(template);
-                    template = AuxilaryForNdLocationPerTemplate(ndLocation,template);
+                    template = AuxilaryForNdLocationPerTemplate(ndLocation, template);
                     model.Template.Add(template);
                 }
             }
@@ -469,17 +415,17 @@ namespace Bisimulation_Desktop
             Transition transition;
             List<Transition> newTransitions = new List<Transition>();
             List<Location> newLocations = new List<Location>();
-            foreach (Location ndLoc in ndLocation.getNdLocations())
+            foreach (Location ndLoc in ndLocation.ndLocations)
             {
-                for( int i = 0; i < template.Transition.Count; i++)
+                for (int i = 0; i < template.Transition.Count; i++)
                 {
                     existingTargetid = string.Empty;
                     newId = string.Empty;
-                    if(template.Transition[i].Source.Ref == ndLoc.Id) 
+                    if (template.Transition[i].Source.Ref == ndLoc.Id)
                     {
                         targetLocation = (from l in template.Location where l.Id == template.Transition[i].Target.Ref select l).First();
                         existingTargetid = template.Transition[i].Target.Ref; //save target of the existing transition
-                        
+
                         // Create new committed location **********
                         newId = LocationInfo.GetNewLocationId(); //get new id from id list for new location
                         committedLocation = new Location(); //initialize new location
@@ -496,13 +442,13 @@ namespace Bisimulation_Desktop
 
                         // Add new transition from Source *********
                         transition = new Transition(); //initialize new transition
-                        transition.Source = new Source(); 
+                        transition.Source = new Source();
                         transition.Target = new Target();
                         //*****************************************
-                        
+
                         transition.Source.Ref = newId; //set new transition source as the existing source location id
                         transition.Target.Ref = existingTargetid; // set target as the new location id
-                        
+
                         newLocations.Add(committedLocation);
                         newTransitions.Add(transition);
                         //template.Location.Add(committedLocation); //add new location in the template              
@@ -516,6 +462,6 @@ namespace Bisimulation_Desktop
                 template.Transition.AddRange(newTransitions);
             return template;
         }
-  
+
     }
 }
