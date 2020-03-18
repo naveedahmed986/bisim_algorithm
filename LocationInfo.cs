@@ -37,7 +37,7 @@ namespace Bisimulation_Desktop
         //Get source and target location and calculates the middle coordinates for X,Y with fraction 0.5 and returns new coordinates in a Tuple 
         public static Tuple<string, string> GetCoordinatesForLocation(Location sourceLoc, Location targetLoc, Transition sourceTransition)
         {
-            string X = string.Empty, Y = string.Empty;
+            
             int sourceX, sourceY;
             Nail nail;
             if (sourceTransition != null && sourceTransition.Nail != null && sourceTransition.Nail.Count > 0) // if true then take the center point between source location and first nail
@@ -53,8 +53,6 @@ namespace Bisimulation_Desktop
             }
             int targetX = Int32.Parse(targetLoc.X);
             int targetY = Int32.Parse(targetLoc.Y);
-            X = Convert.ToString(sourceX + (0.5) * (targetX - sourceX));
-            Y = Convert.ToString(sourceY + (0.5) * (targetY - sourceY));
 
             //****** TODO : Remove ************************************************
             //richTextBox1.AppendText("Source Id : " + sourceLoc.Id + ", Target Id : " + targetLoc.Id + "\n");
@@ -62,6 +60,14 @@ namespace Bisimulation_Desktop
             //richTextBox1.AppendText("Srouce Y : " + sourceLoc.Y + ", Target Y : " + targetLoc.Y + ", Center : " + Y + "\n");
             //*********************************************************************
 
+            return CalculateCenterPoint(sourceX, sourceY, targetX, targetY);
+        }
+
+        public static Tuple<string, string> CalculateCenterPoint(int sourceX, int sourceY, int targetX, int targetY) 
+        {
+            string X = string.Empty, Y = string.Empty;
+            X = Convert.ToString(sourceX + (0.5) * (targetX - sourceX));
+            Y = Convert.ToString(sourceY + (0.5) * (targetY - sourceY));
             return Tuple.Create(X, Y);
         }
     }

@@ -49,6 +49,7 @@
     <Compile Include="AuxilaryChannel.cs" />
     <Compile Include="ChannelInfo.cs" />
     <Compile Include="ConvertModel.cs" />
+    <Compile Include="Common.cs" />
     <Compile Include="LocationInfo.cs" />
     <Compile Include="Main.cs">
       <SubType>Form</SubType>

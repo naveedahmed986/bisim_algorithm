@@ -213,7 +213,7 @@ namespace Bisimulation_Desktop
                         LocationInfo.AddLocationsIds(template);
                         //***********************************
 
-                        ChannelInfo.AddChannelInfo(template);
+                        ChannelInfo.AddChannelInfoByTemplate(template);
                         // List of all non-deterministic locations in the model template wise
                         //ndLocations = AddNdLocationsByTemplate(template);
 
@@ -264,7 +264,7 @@ namespace Bisimulation_Desktop
                 }
 
                 //model1 = AddAuxilaryForNdLocation(ndLocationList, model1);
-                model1 = AuxilaryChannel.AddAuxForIO(model1);
+                model1 = AuxilaryChannel.AddAuxForIOAction(model1);
                 //********** TODO : Remove ***********************
 
                 //List<Template> templates = model1.Template;

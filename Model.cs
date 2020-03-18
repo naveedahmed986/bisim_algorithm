@@ -29,6 +29,8 @@ namespace Bisimulation_Desktop
 		public Label Label { get; set; }
 		[XmlElement(ElementName = "committed")]
 		public string Committed { get; set; }
+		[XmlElement(ElementName = "urgent")]
+		public string Urgent { get; set; }
 	}
 
 	[XmlRoot(ElementName = "label")]

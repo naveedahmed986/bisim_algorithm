@@ -6,24 +6,13 @@ namespace Bisimulation_Desktop
 {
     public class ChannelInfo
     {
-        //templateName, isBroadcaster (is true "!" else "?"), transitionSourceId, transitionTargetId
+        //Tuple : templateName, IsOutput (is true "!" else "?"), transitionSourceId, transitionTargetId
         public static List<Tuple<string, bool, string, string>> channelTranList;
 
         public static Dictionary<string, List<Tuple<string, bool, string, string>>> channelInfoList = 
             new Dictionary<string, List<Tuple<string, bool, string, string>>>();
 
-        //public List<Tuple<string, bool, string, string>> GetChannels()
-        //{
-        //    return list;
-        //}
-
-        //public static void AddChannelInfo(string templateName, bool isBroadcaster, string transitionSourceId,string transitionTargetId)
-        //{
-        //        channelTranList.Add(new Tuple<string, bool, string, string>(
-        //           templateName, isBroadcaster, transitionSourceId, transitionTargetId));
-        //}
-
-        public static void AddChannelInfo(Template template)
+        public static void AddChannelInfoByTemplate(Template template)
         {
             if(template != null && template.Transition != null && template.Transition.Count > 0)
             {
@@ -33,14 +22,14 @@ namespace Bisimulation_Desktop
                     channelTranList = new List<Tuple<string, bool, string, string>>();
                     foreach (Label label in transition.Label)
                     {
-                        if(label.Kind == "synchronisation")
+                        if(label.Kind == Common.TransitionLabelKind.Synchronization)
                         {
                             channelName = label.Text.Substring(0, label.Text.Length - 1);
                             if (channelInfoList.ContainsKey(channelName))
                             {
                                 channelInfoList[channelName].Add(new Tuple<string, bool, string, string>(
                                 template.Name.Text,
-                                IsChannelBroadcaster(label.Text),
+                                IsOutput(label.Text),
                                 transition.Source.Ref,
                                 transition.Target.Ref
                                 ));
@@ -49,7 +38,7 @@ namespace Bisimulation_Desktop
                             {
                                 channelTranList.Add(new Tuple<string, bool, string, string>(
                                 template.Name.Text,
-                                IsChannelBroadcaster(label.Text),
+                                IsOutput(label.Text),
                                 transition.Source.Ref,
                                 transition.Target.Ref
                                 ));
@@ -61,10 +50,10 @@ namespace Bisimulation_Desktop
             }
         }
 
-        //Checks if channel is input or output to the SUT
-        private static bool IsChannelBroadcaster(string channelName)
+        //Checks if channel is input or output to the SUT (! = Output, ? = Input) 
+        private static bool IsOutput(string channelName)
         {
-            if (channelName.LastIndexOf('!') == channelName.Length - 1)
+            if (channelName.LastIndexOf(Common.ActionType.Output) == channelName.Length - 1)
                 return true;
             return false;
         }
