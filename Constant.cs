@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Bisimulation_Desktop
 {
-    public static class Common
+    public static class Constant
     {
-        public static class Constant
+        public static class Common
         {
             public static string AuxilaryChannelPostfix = "_aux";
             public static string InputChannelPrefix = "i_";

@@ -22,14 +22,14 @@ namespace Bisimulation_Desktop
                     channelTranList = new List<Tuple<string, bool, string, string>>();
                     foreach (Label label in transition.Label)
                     {
-                        if(label.Kind == Common.TransitionLabelKind.Synchronization)
+                        if(label.Kind == Constant.TransitionLabelKind.Synchronization)
                         {
-                            channelName = label.Text.Substring(0, label.Text.Length - 1);
+                            channelName = GetChannelName(label.Text);
                             if (channelInfoList.ContainsKey(channelName))
                             {
                                 channelInfoList[channelName].Add(new Tuple<string, bool, string, string>(
                                 template.Name.Text,
-                                IsOutput(label.Text),
+                                IsOutputAction(label.Text),
                                 transition.Source.Ref,
                                 transition.Target.Ref
                                 ));
@@ -38,7 +38,7 @@ namespace Bisimulation_Desktop
                             {
                                 channelTranList.Add(new Tuple<string, bool, string, string>(
                                 template.Name.Text,
-                                IsOutput(label.Text),
+                                IsOutputAction(label.Text),
                                 transition.Source.Ref,
                                 transition.Target.Ref
                                 ));
@@ -51,11 +51,25 @@ namespace Bisimulation_Desktop
         }
 
         //Checks if channel is input or output to the SUT (! = Output, ? = Input) 
-        private static bool IsOutput(string channelName)
+        private static bool IsOutputAction(string channelName)
         {
-            if (channelName.LastIndexOf(Common.ActionType.Output) == channelName.Length - 1)
+            if (channelName.LastIndexOf(Constant.ActionType.Output) == channelName.Length - 1)
                 return true;
             return false;
+        }
+
+        public static string GetChannelName(string channelName)
+        {
+            if (!string.IsNullOrEmpty(channelName))
+            {
+                if(channelName.Contains('[') && channelName.Contains(']'))
+                {
+                    channelName = channelName.Substring(0, channelName.IndexOf('['));
+                }
+                else
+                    channelName = channelName.Substring(0, channelName.Length - 1);
+            }
+            return channelName;
         }
     }
 }

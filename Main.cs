@@ -180,7 +180,7 @@ namespace Bisimulation_Desktop
             try
             {
                 Nta model1 = ConvertModel.XMLtoNta(filePath);
-                if (!string.IsNullOrEmpty(filePath2)) // merge model2 only if path is provided
+                if (!string.IsNullOrEmpty(filePath2)) // merge model2 only if file path is provided
                 {
                     Nta model2 = ConvertModel.XMLtoNta(filePath2);
                     model2 = RenameTemplatesInModel(model1, model2);
@@ -194,6 +194,9 @@ namespace Bisimulation_Desktop
 
                     Dictionary<string, NdTransition> ndTransitionList = new Dictionary<string, NdTransition>();
                     NdTransition ndTList;
+
+                    LocationInfo.locationIds.Clear();
+                    ChannelInfo.channelInfoList.Clear();
 
                     foreach (Template template in model1.Template) // Loop over all templates
                     {
@@ -224,7 +227,9 @@ namespace Bisimulation_Desktop
                             ndLocationList.Add(template.Name.Text, ndLList);
                     }
 
-                    model1 = AddAuxilaryForNdLocation(ndLocationList, model1);
+                    // Add committed locations for all locations that have more than one out going  transitions
+                    //model1 = AddAuxilaryForNdLocation(ndLocationList, model1);
+                    //**************************************
 
                 }
                 return model1;
@@ -351,7 +356,7 @@ namespace Bisimulation_Desktop
             {
                 foreach (Label label in transition.Label)
                 {
-                    if (label.Kind == Common.TransitionLabelKind.Select)
+                    if (label.Kind == Constant.TransitionLabelKind.Select)
                     {
                         list.ndTransitions.Add(transition);
                     }
@@ -462,6 +467,5 @@ namespace Bisimulation_Desktop
                 template.Transition.AddRange(newTransitions);
             return template;
         }
-
     }
 }
