@@ -183,8 +183,9 @@ namespace Bisimulation_Desktop
                 if (!string.IsNullOrEmpty(filePath2)) // merge model2 only if file path is provided
                 {
                     Nta model2 = ConvertModel.XMLtoNta(filePath2);
-                    model2 = RenameTemplatesInModel(model1, model2);
-                    model1 = MergeModels(model1, model2);
+                    model2 = Extension.RenameTemplatesInModel(model1, model2);
+                    model2 = Extension.ModifyC_Code(model2);
+                    model1 = Extension.MergeModels(model1, model2);
                 }
 
                 if (model1 != null)
@@ -241,92 +242,6 @@ namespace Bisimulation_Desktop
                 richTextBox1.ForeColor = Color.Black;
                 return null;
             }
-        }
-
-        /*
-         * Compare names of the templates from model1 and model2
-         * and rename duplications in model2 with postfix "_"
-         * returns model2
-         */
-        private Nta RenameTemplatesInModel(Nta model1, Nta model2)
-        {
-            for (int x = 0; x < model2.Template.Count; x++) //For each template in model2 compare name to the templates in model1
-            {
-                string newName = "";
-                for (int y = 0; y < model1.Template.Count; y++) // compare name of each template in model1 with model2 and add postfix _ if names matched
-                {
-                    if (model2.Template[x].Name.Text.Trim() == model1.Template[y].Name.Text.Trim())
-                    {
-                        newName = model2.Template[x].Name.Text.Trim();
-                        newName = newName + "_";
-
-                        // modify template name in the system properties as well
-                        string properties = @model2.System;
-                        properties = properties.Replace((model2.Template[x].Name.Text.Trim()+","), newName+",");
-                        model2.System = @properties;
-                        model2.Template[x].Name.Text = newName;
-                    }
-                }
-
-                for (int z = 0; z < model2.Template.Count; z++) // if name is duplicated within model2 templates then add another postfix
-                {
-                    if (x != z && model2.Template[x].Name.Text.Trim() == model2.Template[z].Name.Text.Trim())
-                    {
-                        newName = newName + "_";
-                        model2.Template[z].Name.Text = newName;
-                    }
-                }
-            }
-            return model2;
-        }
-
-        //Merge model2 into model1, templates, global declarations and system properties and returns model1
-        private Nta MergeModels(Nta model1, Nta model2)
-        {
-            // 1. Merge templates of model2 in model1
-            foreach(Template template in model2.Template)
-            {
-                model1.Template.Add(template);
-            }
-
-            // 2. Merge global declarations
-
-            model1.Declaration = model1.Declaration + "\n\n//Model2 declarations \n" + model2.Declaration;
-
-            // 3. Merge system properties of model2 in model1
-            
-            //******* Remove system statement from model2 system so that 
-            //rest of the text can be added to model1 system ******
-            string systemProperties2 = @model2.System;
-            int startPosition = systemProperties2.IndexOf("\nsystem");
-            if(startPosition < 0)
-                startPosition = systemProperties2.IndexOf("system");
-            int endPosition = systemProperties2.IndexOf(";", startPosition);
-            string systemStatement = systemProperties2.Substring(startPosition, (endPosition - startPosition)+1);
-            systemProperties2 = systemProperties2.Replace(systemStatement, "");
-            //**********************************************************
-
-            //*** Modify model1 system statement and add templates names of model2 
-            //and also append rest of the text in system tag of model2 into model1 system tag ***
-            string systemProperties1 = @model1.System;
-            startPosition = systemProperties1.IndexOf("\nsystem");
-            if(startPosition < 0)
-                startPosition = systemProperties1.IndexOf("system");
-            endPosition = systemProperties1.IndexOf(";", startPosition);
-            systemStatement = systemProperties1.Substring(startPosition, (endPosition - startPosition)+1);
-            systemProperties1 = systemProperties1.Replace(systemStatement, "");
-            systemProperties1 = systemProperties1 + "\n\n //Model2 properties \n\n";
-            systemProperties1 = systemProperties1 + systemProperties2;
-
-            systemStatement = systemStatement.Replace(";", "");
-            foreach (Template template in model2.Template)
-                systemStatement = systemStatement + " ," + template.Name.Text.Trim();
-            systemStatement = systemStatement + ";";
-
-            systemProperties1 = systemProperties1 + "\n" + systemStatement;
-
-            model1.System = systemProperties1;
-            return model1;
         }
 
         //Identifies non-deterministic locations and returns a list for a given template

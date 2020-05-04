@@ -60,7 +60,8 @@ namespace Bisimulation_Desktop
                                 
                                 syncLabel = new Label();
                                 syncLabel.Kind = Constant.TransitionLabelKind.Synchronization;
-                                syncLabel.Text = GetAuxChannelName(info.Item2, TransitionInfo.GetChannelNameFromTransition(sourceTransition), model.Declaration);
+                                string channelTName = TransitionInfo.GetChannelNameFromTransition(sourceTransition);
+                                syncLabel.Text = GetAuxChannelName(info.Item2, channelTName, model.Declaration);
                                 coordinates = LocationPoint.CalculateCenterPoint(
                                     Int32.Parse(coordinates.Item1),
                                     Int32.Parse(coordinates.Item2),

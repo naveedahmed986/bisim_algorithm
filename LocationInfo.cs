@@ -66,8 +66,8 @@ namespace Bisimulation_Desktop
         public static Tuple<string, string> CalculateCenterPoint(int sourceX, int sourceY, int targetX, int targetY) 
         {
             string X = string.Empty, Y = string.Empty;
-            X = Convert.ToString(sourceX + (0.5) * (targetX - sourceX));
-            Y = Convert.ToString(sourceY + (0.5) * (targetY - sourceY));
+            X = Convert.ToString(Math.Floor(sourceX + (0.5) * (targetX - sourceX)));
+            Y = Convert.ToString(Math.Floor(sourceY + (0.5) * (targetY - sourceY)));
             return Tuple.Create(X, Y);
         }
     }
