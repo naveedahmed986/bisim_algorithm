@@ -162,10 +162,11 @@ namespace Bisimulation_Desktop
             {
                 SetLoading(true);
                 Nta model = TransformModels();
-                if (ConvertModel.NtatoXML(model))
+                string transformedFilePath = ConvertModel.NtatoXML(model);
+                if (!string.IsNullOrEmpty(transformedFilePath))
                 {
                     richTextBox1.ForeColor = Color.Black;
-                    richTextBox1.Text = "File saved at : " + Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                    richTextBox1.Text = "File saved at : " + transformedFilePath;
                     richTextBox1.AppendText("\n\nFile name : bi_model.xml");
                 }
                 SetLoading(false);
@@ -197,7 +198,9 @@ namespace Bisimulation_Desktop
                     NdTransition ndTList;
 
                     LocationInfo.locationIds.Clear();
-                    ChannelInfo.channelInfoList.Clear();
+                    ChannelInfo.channelInfoList1.Clear();
+                    ChannelInfo.channelInfoList2.Clear();
+                    TemplateInfo.templateType.Clear();
 
                     foreach (Template template in model1.Template) // Loop over all templates
                     {
@@ -210,8 +213,10 @@ namespace Bisimulation_Desktop
                         //***********************************
                     }
 
+                    ChannelInfo.SplitChannelList();
+
                     // Add auxilary channels for all I/O actions in the model
-                    model1 = AuxilaryChannel.AddAuxForIOAction(model1);
+                    model1 = Synchronization.SyncIOActions(model1);
                     //***********************************
 
                     foreach (Template template in model1.Template)

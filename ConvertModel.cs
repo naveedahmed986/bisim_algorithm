@@ -19,7 +19,7 @@ namespace Bisimulation_Desktop
         }
 
         //Serialize Nta to XML and write it on the disk
-        public static bool NtatoXML(Nta model)
+        public static string NtatoXML(Nta model)
         {
             if (model != null)
             {
@@ -34,9 +34,9 @@ namespace Bisimulation_Desktop
                     xml.Serialize(writer, model, xmlnsEmpty);
                 }
                 file.Close();
-                return true;
+                return path;
             }
-            return false;
+            return string.Empty;
         }
     }
 }

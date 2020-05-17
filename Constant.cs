@@ -26,8 +26,14 @@ namespace Bisimulation_Desktop
 
         public static class ActionType
         {
-            public static char Output = '!';
-            public static char Input = '?';
+            public static char Sender = '!';
+            public static char Receiver = '?';
+        }
+
+        public static class TemplateType
+        {
+            public static string ENV = "ENV";
+            public static string Other = "OTHER";
         }
 
         public static class LocationLabelKind
