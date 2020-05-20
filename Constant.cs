@@ -10,7 +10,7 @@ namespace Bisimulation_Desktop
     {
         public static class Common
         {
-            public static string AuxilaryChannelPostfix = "_aux";
+            public static string AuxilaryChannelPostfix = "sync";
             public static string InputChannelPrefix = "i_";
             public static string OutputChannelPrefix = "o_";
             public static string VariablePostfix = "_";

@@ -21,7 +21,7 @@ namespace Bisimulation_Desktop
         }
 
         //Gets String and returns an integer number from the string
-        private static int GetNumberFromString(string id)
+        public static int GetNumberFromString(string id)
         {
             return Int32.Parse(Regex.Match(id, @"\d+").Value);
         }
@@ -35,12 +35,11 @@ namespace Bisimulation_Desktop
     public static class LocationPoint
     {
         //Get source and target location and calculates the middle coordinates for X,Y with fraction 0.5 and returns new coordinates in a Tuple 
-        public static Tuple<string, string> GetCoordinatesForLocation(Location sourceLoc, Location targetLoc, Transition sourceTransition)
+        public static Tuple<string, string> GetCoordinatesForLocationLastNail(Location sourceLoc, Location targetLoc, Transition sourceTransition)
         {
-            
             int sourceX, sourceY;
             Nail nail;
-            if (sourceTransition != null && sourceTransition.Nail != null && sourceTransition.Nail.Count > 0) // if true then take the center point between source location and first nail
+            if (sourceTransition != null && sourceTransition.Nail != null && sourceTransition.Nail.Count > 0) // if true then take the center point between source location and last nail
             {
                 nail = sourceTransition.Nail[sourceTransition.Nail.Count - 1];
                 sourceX = Int32.Parse(nail.X);
@@ -54,11 +53,26 @@ namespace Bisimulation_Desktop
             int targetX = Int32.Parse(targetLoc.X);
             int targetY = Int32.Parse(targetLoc.Y);
 
-            //****** TODO : Remove ************************************************
-            //richTextBox1.AppendText("Source Id : " + sourceLoc.Id + ", Target Id : " + targetLoc.Id + "\n");
-            //richTextBox1.AppendText("Srouce X : " + sourceLoc.X + ", Target X : " + targetLoc.X + ", Center : " + X + "\n");
-            //richTextBox1.AppendText("Srouce Y : " + sourceLoc.Y + ", Target Y : " + targetLoc.Y + ", Center : " + Y + "\n");
-            //*********************************************************************
+            return CalculateCenterPoint(sourceX, sourceY, targetX, targetY);
+        }
+
+        public static Tuple<string, string> GetCoordinatesForLocationFirstNail(Location sourceLoc, Location targetLoc, Transition sourceTransition)
+        {
+            int sourceX, sourceY;
+            Nail nail;
+            if (sourceTransition != null && sourceTransition.Nail != null && sourceTransition.Nail.Count > 0) // if true then take the center point between source location and first nail
+            {
+                nail = sourceTransition.Nail[0];
+                sourceX = Int32.Parse(nail.X);
+                sourceY = Int32.Parse(nail.Y);
+            }
+            else // otherwise take the center point between source and target location
+            {
+                sourceX = Int32.Parse(sourceLoc.X);
+                sourceY = Int32.Parse(sourceLoc.Y);
+            }
+            int targetX = Int32.Parse(targetLoc.X);
+            int targetY = Int32.Parse(targetLoc.Y);
 
             return CalculateCenterPoint(sourceX, sourceY, targetX, targetY);
         }

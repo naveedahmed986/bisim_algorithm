@@ -356,7 +356,7 @@ namespace Bisimulation_Desktop
                         committedLocation = new Location(); //initialize new location
                         committedLocation.Id = newId;
                         committedLocation.Committed = "committed";
-                        Tuple<string, string> coordinates = LocationPoint.GetCoordinatesForLocation(ndLoc, targetLocation, template.Transition[i]);
+                        Tuple<string, string> coordinates = LocationPoint.GetCoordinatesForLocationLastNail(ndLoc, targetLocation, template.Transition[i]);
                         committedLocation.X = coordinates.Item1;
                         committedLocation.Y = coordinates.Item2;
                         //*****************************************
