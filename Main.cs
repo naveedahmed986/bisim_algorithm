@@ -215,12 +215,10 @@ namespace Bisimulation_Desktop
 
                     ChannelInfo.SplitChannelList();
 
-                    // Add auxilary channels for all I/O actions in the model
-                    model1 = Synchronization.SyncIOActions(model1);
-                    //***********************************
-
                     foreach (Template template in model1.Template)
                     {
+                        ChannelInfo.AddTemplateType(template);
+
                         ndTList = new NdTransition();
                         ndLList = new NdLocation();
 
@@ -232,6 +230,10 @@ namespace Bisimulation_Desktop
                         if (ndLList.ndLocations.Count > 0)
                             ndLocationList.Add(template.Name.Text, ndLList);
                     }
+
+                    // Add auxilary channels for all I/O actions in the model
+                    model1 = Synchronization.SyncIOActions(model1);
+                    //***********************************
 
                     // Add committed locations for all locations that have more than one out going  transitions
                     //model1 = AddAuxilaryForNdLocation(ndLocationList, model1);

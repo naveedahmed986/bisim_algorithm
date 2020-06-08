@@ -33,16 +33,17 @@ namespace Bisimulation_Desktop
                     {
                         if(label.Kind == Constant.TransitionLabelKind.Synchronization)
                         {
+                            
                             // below check will verify if there is any signal sent from the initial location then set ENV flag true
-                            if (template.Init.Ref.Equals(transition.Source.Ref) && IsSender(label.Text) && !envSetBefore)
-                                isEnv = true;
+                            //if (template.Init.Ref.Equals(transition.Source.Ref) && IsSender(label.Text) && !envSetBefore)
+                            //    isEnv = true;
                             /* below is to explicitly check if there is send and receiving signals (mulitple transitions) 
                             from initial location of a template then dont consider it and set ENV flag false ENV */
-                            if (template.Init.Ref.Equals(transition.Source.Ref) && !IsSender(label.Text))
-                            {
-                                isEnv = false;
-                                envSetBefore = true;
-                            }
+                            //if (template.Init.Ref.Equals(transition.Source.Ref) && !IsSender(label.Text))
+                            //{
+                            //    isEnv = false;
+                            //    envSetBefore = true;
+                            //}
                             //// if initial state contains self loop and also outgoing with receiver signal then set ENV flag false 
                             //if (template.Init.Ref.Equals(transition.Source.Ref) && template.Init.Ref.Equals(transition.Target.Ref) && IsSender(label.Text))
                             //{
@@ -92,17 +93,24 @@ namespace Bisimulation_Desktop
                         }
                     }
                 }
-                if (isEnv)
-                    TemplateInfo.templateType.Add(template.Name.Text, Constant.TemplateType.ENV);
-                else
-                    TemplateInfo.templateType.Add(template.Name.Text, Constant.TemplateType.Other);
+                //if (isEnv)
+                //    TemplateInfo.templateType.Add(template.Name.Text, Constant.TemplateType.ENV);
+                //else
+                //    TemplateInfo.templateType.Add(template.Name.Text, Constant.TemplateType.Other);
             }
         }
 
         //Checks if channel is input or output to the SUT (! = Sender, ? = Receiver) 
-        private static bool IsSender(string channelName)
+        public static bool IsSender(string channelName)
         {
-            if (channelName.LastIndexOf(Constant.ActionType.Sender) == channelName.Length - 1)
+            if (!string.IsNullOrEmpty(channelName) && channelName.LastIndexOf(Constant.ActionType.Sender) == channelName.Length - 1)
+                return true;
+            return false;
+        }
+
+        public static bool IsInputChannel(string channelName)
+        {
+            if (!string.IsNullOrEmpty(channelName) && channelName.Substring(0,2).Equals(Constant.Common.InputChannelPrefix))
                 return true;
             return false;
         }
@@ -131,6 +139,77 @@ namespace Bisimulation_Desktop
                 if (channelInfoList1.ContainsKey(ch.Key))
                     channelInfoList1.Remove(ch.Key);
         }
+
+        public static void AddTemplateType(Template template)
+        {
+            bool isEnv = false;
+            foreach (Transition transition in template.Transition)
+            {
+                if (transition.Label.Count > 0)
+                {
+                    foreach (Label label in transition.Label)
+                    {
+                        if (label.Kind.Equals(Constant.TransitionLabelKind.Synchronization))
+                        {
+                            if (!string.IsNullOrEmpty(label.Text) &&
+                                label.Text.Substring(0, 2).Equals(Constant.Common.InputChannelPrefix) &&
+                                    label.Text.Substring(label.Text.Length - 1, 1).Equals(Convert.ToString(Constant.ActionType.Sender)))
+                            {
+                                isEnv = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!TemplateInfo.templateType.ContainsKey(template.Name.Text))
+            { 
+                if (isEnv)
+                    TemplateInfo.templateType.Add(template.Name.Text, Constant.TemplateType.ENV);
+                else
+                    TemplateInfo.templateType.Add(template.Name.Text, Constant.TemplateType.Other);
+            }
+
+            //bool isSender = false;
+            //foreach (var channel in ChannelInfo.channelInfoList1)
+            //{
+            //    foreach (var template in channel.Value)
+            //    {
+            //        if (channel.Key.Substring(0, 2).Equals(Constant.Common.InputChannelPrefix))
+            //        {
+            //            foreach (var item in template.Value)
+            //            {
+            //                if (item.Item1)
+            //                    isSender = true;
+            //            }
+            //            if (!TemplateInfo.templateType.ContainsKey(template.Key))
+            //            {
+            //                if (isSender)
+            //                    TemplateInfo.templateType.Add(template.Key, Constant.TemplateType.ENV);
+            //                else
+            //                    TemplateInfo.templateType.Add(template.Key, Constant.TemplateType.Other);
+            //            }
+            //        }
+            //        if (channel.Key.Substring(0, 2).Equals(Constant.Common.OutputChannelPrefix))
+            //        {
+            //            foreach (var item in template.Value)
+            //            {
+            //                if (item.Item1)
+            //                    isSender = true;
+            //            }
+            //            if (!TemplateInfo.templateType.ContainsKey(template.Key))
+            //            {
+            //                if (isSender)
+            //                    TemplateInfo.templateType.Add(template.Key, Constant.TemplateType.Other);
+            //                else
+            //                    TemplateInfo.templateType.Add(template.Key, Constant.TemplateType.ENV);
+            //            }
+            //        }
+            //        isSender = false;
+            //    }
+            //}
+        }
+
         //public static void SynchronizationPairs(Nta model)
         //{
         //    foreach(var channel in channelInfoList1)
