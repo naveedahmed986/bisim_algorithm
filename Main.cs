@@ -186,6 +186,7 @@ namespace Bisimulation_Desktop
                     Nta model2 = ConvertModel.XMLtoNta(filePath2);
                     model2 = Extension.RenameTemplatesInModel(model1, model2);
                     model2 = Extension.ModifyC_Code(model2);
+                    //model1 = Extension.MergeModels(model1, model2);
                     model1 = Extension.MergeModels(model1, model2);
                 }
 
@@ -232,9 +233,10 @@ namespace Bisimulation_Desktop
                     }
 
                     // Add auxilary channels for all I/O actions in the model
-                    model1 = Synchronization.SyncIOActions(model1);
+                    //model1 = Synchronization.SyncIOActions(model1);
                     //***********************************
 
+                    model1 = Synchronization.SyncModels(model1);
                     // Add committed locations for all locations that have more than one out going  transitions
                     //model1 = AddAuxilaryForNdLocation(ndLocationList, model1);
                     //**************************************

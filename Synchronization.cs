@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 
 namespace Bisimulation_Desktop
 {
@@ -28,82 +27,85 @@ namespace Bisimulation_Desktop
             {
                 foreach (var ch in ChannelInfo.channelInfoList1) // ch.Key contains channel name
                 {
-                    if (ChannelInfo.channelInfoList2.ContainsKey(ch.Key + Constant.Common.VariablePostfix))
+                    if (ChannelInfo.IsIOChannel(ch.Key))
                     {
-                        var templs2 = ChannelInfo.channelInfoList2[ch.Key + Constant.Common.VariablePostfix]; // ch2.Key = ch.Key + Constant.Common.VariablePostfix
-
-                        foreach (var templ in ch.Value) //templ.Key contains template name
+                        if (ChannelInfo.channelInfoList2.ContainsKey(ch.Key + Constant.Common.VariablePostfix))
                         {
-                            foreach (var templ2 in templs2)
+                            var templs2 = ChannelInfo.channelInfoList2[ch.Key + Constant.Common.VariablePostfix]; // ch2.Key = ch.Key + Constant.Common.VariablePostfix
+
+                            foreach (var templ in ch.Value) //templ.Key contains template name
                             {
-                                if (templ.Value.Count == 1 && templ2.Value.Count == 1 && templ.Value[0].Item1 == templ2.Value[0].Item1) // if both templates contain exactly one transition with that channel and both are either sender or receiver
+                                foreach (var templ2 in templs2)
                                 {
-                                    auxChannelName = GetAuxiliaryChannelName(ch.Key.Substring(0, 2));
-                                    if ((TemplateInfo.templateType[templ.Key]).Equals(Constant.TemplateType.ENV)) // if primary template is of type ENV
-                                        syncBefore = true;
-                                    var val1 = templ.Value[0];
-                                    var val2 = templ2.Value[0];
-
-                                    template = (from t in model.Template where t.Name.Text.Equals(templ.Key) select t).First();
-                                    model.Template.Remove(template);
-                                    template = AddAuxChannelInTemplate(template, val1.Item2, val1.Item3, syncBefore, string.Concat(auxChannelName, Constant.ActionType.Sender));
-                                    model.Template.Add(template);
-                                    syncBefore = false;
-
-                                    if ((TemplateInfo.templateType[templ.Key]).Equals(Constant.TemplateType.ENV)) // if primary template is of type ENV
-                                        syncBefore = true;
-                                    template = (from t in model.Template where t.Name.Text.Equals(templ2.Key) select t).First();
-                                    model.Template.Remove(template);
-                                    template = AddAuxChannelInTemplate(template, val2.Item2, val2.Item3, syncBefore, string.Concat(auxChannelName, Constant.ActionType.Receiver));
-                                    model.Template.Add(template);
-                                    syncBefore = false;
-
-                                    auxChannelName = string.Empty;
-                                    isAuxChannelAdded = true;
-                                }
-
-                                if (templ.Value.Count > 1 && templ2.Value.Count > 1)
-                                {
-                                    foreach (var val1 in templ.Value)
+                                    if (templ.Value.Count == 1 && templ2.Value.Count == 1 && templ.Value[0].Item1 == templ2.Value[0].Item1) // if both templates contain exactly one transition with that channel and both are either sender or receiver
                                     {
-                                        if (!val1.Item2.Equals(val1.Item3)) // skip self loop transition
+                                        auxChannelName = GetAuxiliaryChannelName(ch.Key.Substring(0, 2));
+                                        if ((TemplateInfo.templateType[templ.Key]).Equals(Constant.TemplateType.ENV)) // if primary template is of type ENV
+                                            syncBefore = true;
+                                        var val1 = templ.Value[0];
+                                        var val2 = templ2.Value[0];
+
+                                        template = (from t in model.Template where t.Name.Text.Equals(templ.Key) select t).First();
+                                        model.Template.Remove(template);
+                                        template = AddAuxChannelInTemplate(template, val1.Item2, val1.Item3, syncBefore, string.Concat(auxChannelName, Constant.ActionType.Sender));
+                                        model.Template.Add(template);
+                                        syncBefore = false;
+
+                                        if ((TemplateInfo.templateType[templ.Key]).Equals(Constant.TemplateType.ENV)) // if primary template is of type ENV
+                                            syncBefore = true;
+                                        template = (from t in model.Template where t.Name.Text.Equals(templ2.Key) select t).First();
+                                        model.Template.Remove(template);
+                                        template = AddAuxChannelInTemplate(template, val2.Item2, val2.Item3, syncBefore, string.Concat(auxChannelName, Constant.ActionType.Receiver));
+                                        model.Template.Add(template);
+                                        syncBefore = false;
+
+                                        auxChannelName = string.Empty;
+                                        isAuxChannelAdded = true;
+                                    }
+
+                                    if (templ.Value.Count > 1 && templ2.Value.Count > 1)
+                                    {
+                                        foreach (var val1 in templ.Value)
                                         {
-                                            t1HasGuard = false;
-                                            template = (from t in model.Template where t.Name.Text.Equals(templ.Key) select t).First();
-                                            tList = GetPrevTransition(template, val1.Item2);
-                                            foreach (Transition t in tList)
-                                                if (ContainsTransitionKind(t, Constant.TransitionLabelKind.Guard))
-                                                    t1HasGuard = true;
-                                            foreach (var val2 in templ2.Value)
+                                            if (!val1.Item2.Equals(val1.Item3)) // skip self loop transition
                                             {
-                                                if (!val2.Item2.Equals(val2.Item3))
+                                                t1HasGuard = false;
+                                                template = (from t in model.Template where t.Name.Text.Equals(templ.Key) select t).First();
+                                                tList = GetPrevTransition(template, val1.Item2);
+                                                foreach (Transition t in tList)
+                                                    if (ContainsTransitionKind(t, Constant.TransitionLabelKind.Guard))
+                                                        t1HasGuard = true;
+                                                foreach (var val2 in templ2.Value)
                                                 {
-                                                    t2HasGuard = false;
-                                                    template2 = (from t in model.Template where t.Name.Text.Equals(templ2.Key) select t).First();
-                                                    tList = GetPrevTransition(template2, val2.Item2);
-                                                    foreach (Transition t in tList)
-                                                        if (ContainsTransitionKind(t, Constant.TransitionLabelKind.Guard))
-                                                            t2HasGuard = true;
-                                                    if (t1HasGuard == t2HasGuard && val1.Item1 == val2.Item1)
+                                                    if (!val2.Item2.Equals(val2.Item3))
                                                     {
-                                                        auxChannelName = GetAuxiliaryChannelName(ch.Key.Substring(0, 2));
-                                                        if ((TemplateInfo.templateType[templ.Key]).Equals(Constant.TemplateType.ENV))
-                                                            syncBefore = true;
-                                                        model.Template.Remove(template);
-                                                        template = AddAuxChannelInTemplate(template, val1.Item2, val1.Item3, syncBefore, string.Concat(auxChannelName, Constant.ActionType.Sender));
-                                                        model.Template.Add(template);
-                                                        syncBefore = false;
+                                                        t2HasGuard = false;
+                                                        template2 = (from t in model.Template where t.Name.Text.Equals(templ2.Key) select t).First();
+                                                        tList = GetPrevTransition(template2, val2.Item2);
+                                                        foreach (Transition t in tList)
+                                                            if (ContainsTransitionKind(t, Constant.TransitionLabelKind.Guard))
+                                                                t2HasGuard = true;
+                                                        if (t1HasGuard == t2HasGuard && val1.Item1 == val2.Item1)
+                                                        {
+                                                            auxChannelName = GetAuxiliaryChannelName(ch.Key.Substring(0, 2));
+                                                            if ((TemplateInfo.templateType[templ.Key]).Equals(Constant.TemplateType.ENV))
+                                                                syncBefore = true;
+                                                            model.Template.Remove(template);
+                                                            template = AddAuxChannelInTemplate(template, val1.Item2, val1.Item3, syncBefore, string.Concat(auxChannelName, Constant.ActionType.Sender));
+                                                            model.Template.Add(template);
+                                                            syncBefore = false;
 
-                                                        if ((TemplateInfo.templateType[templ2.Key]).Equals(Constant.TemplateType.ENV))
-                                                            syncBefore = true;
-                                                        model.Template.Remove(template2);
-                                                        template2 = AddAuxChannelInTemplate(template2, val2.Item2, val2.Item3, syncBefore, string.Concat(auxChannelName, Constant.ActionType.Receiver));
-                                                        model.Template.Add(template2);
-                                                        syncBefore = false;
+                                                            if ((TemplateInfo.templateType[templ2.Key]).Equals(Constant.TemplateType.ENV))
+                                                                syncBefore = true;
+                                                            model.Template.Remove(template2);
+                                                            template2 = AddAuxChannelInTemplate(template2, val2.Item2, val2.Item3, syncBefore, string.Concat(auxChannelName, Constant.ActionType.Receiver));
+                                                            model.Template.Add(template2);
+                                                            syncBefore = false;
 
-                                                        auxChannelName = string.Empty;
-                                                        isAuxChannelAdded = true;
-                                                        break;
+                                                            auxChannelName = string.Empty;
+                                                            isAuxChannelAdded = true;
+                                                            break;
+                                                        }
                                                     }
                                                 }
                                             }
@@ -113,8 +115,6 @@ namespace Bisimulation_Desktop
                             }
                         }
                     }
-
-
                     //if (ch.Key.Length >= 2 && (string.Equals(ch.Key.Substring(0, 2), Constant.Common.InputChannelPrefix) ||
                     //    string.Equals(ch.Key.Substring(0, 2), Constant.Common.OutputChannelPrefix)) &&
                     //    !modifiedChannels.Contains(ch.Key))
@@ -246,7 +246,7 @@ namespace Bisimulation_Desktop
         {     
             Location sourceLoc = (from sl in template.Location where sl.Id.Equals(sourceId) select sl).First();
             Location targetLoc = (from tl in template.Location where tl.Id.Equals(targetId) select tl).First();
-            Transition sourceTransition = TransitionInfo.GetTransitionBySourceAndTarget(template, sourceId, targetId);
+            Transition sourceTransition = TransitionInfo.GetTransitionBySourceAndTargetId(template, sourceId, targetId);
             template.Transition.Remove(sourceTransition);
 
             string newId = LocationInfo.GetNewLocationId(); //get new id from id list for new location
@@ -488,6 +488,126 @@ namespace Bisimulation_Desktop
                     if (t.Target.Ref.Equals(id))
                         tList.Add(t);
             return tList;
+        }
+
+        public static Nta SyncModels(Nta model1)
+        {
+            Location newLoc1 = null, newLoc2 = null, newLoc3 = null;
+            List<Location> locList1 = new List<Location>();
+            List<Transition> tranList1 = new List<Transition>();
+            Transition newTransition1 = null, newTransition2 = null, newTransition3 = null;
+            string newId1 = string.Empty, newId2 = string.Empty, newId3 = string.Empty;
+            nta=model1;
+            Label label1 = null, label2 = null, auxLabel=null;
+            Transition srcTransition2 = null;
+            Template tgtTemplate2 = null;
+            int index = 0;
+            if (model1.Template.Count <= 0)
+                return model1;
+            for(int teIndex =0; teIndex < nta.Template.Count; teIndex++)
+            {
+                tgtTemplate2 = TemplateInfo.GetTemplateByName(model1, string.Concat(model1.Template[teIndex].Name.Text, Constant.Common.TemplateRenamePostfix));
+                if (tgtTemplate2 != null)
+                {
+                    model1.Template.Remove(tgtTemplate2);
+                    if (model1.Template[teIndex].Transition.Count > 0)
+                    {
+                        for (int trIndex = 0; trIndex < nta.Template[teIndex].Transition.Count; trIndex++)
+                        {
+                            if ((label1 = TransitionInfo.TransitionHasChannel(model1.Template[teIndex].Transition[trIndex])) != null)
+                            {
+                                srcTransition2 = TransitionInfo.GetTransitionBySourceAndTargetId(tgtTemplate2, model1.Template[teIndex].Transition[trIndex].Source.Ref, model1.Template[teIndex].Transition[trIndex].Target.Ref);
+                                if (srcTransition2 != null)
+                                {
+                                    if ((label2 = TransitionInfo.TransitionHasChannel(srcTransition2)) != null)
+                                    {
+                                        index++;
+                                        tgtTemplate2.Transition.Remove(srcTransition2);
+                                        
+                                        newId1 = LocationInfo.GetNewLocationId();
+                                        LocationInfo.locationIds.Add(Int32.Parse(Regex.Match(newId1, @"\d+").Value));
+
+                                        newLoc1 = new Location();
+                                        newLoc1.Id = newId1;
+                                        newLoc1.Urgent = Constant.LocationLabelKind.Urgent;
+
+                                        newTransition1 = new Transition();
+                                        newTransition1.Source = new Source();
+                                        newTransition1.Target = new Target();
+
+                                        newTransition1.Source.Ref = model1.Template[teIndex].Transition[trIndex].Source.Ref;
+                                        newTransition1.Target.Ref = newId1;
+
+                                        model1.Template[teIndex].Transition[trIndex].Source.Ref = newId1;
+                                        newTransition1.Target.Ref = newId1;
+                                        //model1.Template[teIndex].Transition[trIndex].Target =
+
+                                        auxLabel = new Label();
+                                        auxLabel.Kind = Constant.TransitionLabelKind.Synchronization;
+                                        auxLabel.Text = "x" + index + "!";
+                                        newTransition1.Label = new List<Label>();
+                                        newTransition1.Label.Add(auxLabel);
+
+                                        locList1.Add(newLoc1);
+                                        tranList1.Add(newTransition1);
+
+                                        newId2 = LocationInfo.GetNewLocationId();
+                                        LocationInfo.locationIds.Add(Int32.Parse(Regex.Match(newId2, @"\d+").Value));
+                                        newId3 = LocationInfo.GetNewLocationId();
+                                        LocationInfo.locationIds.Add(Int32.Parse(Regex.Match(newId1, @"\d+").Value));
+
+                                        newLoc2 = new Location();
+                                        newLoc2.Id = newId2;
+                                        newLoc2.Urgent = Constant.LocationLabelKind.Urgent;
+
+                                        newLoc3 = new Location();
+                                        newLoc3.Id = newId3;
+                                        newLoc3.Committed = Constant.LocationLabelKind.Committed;
+
+                                        newTransition2 = new Transition();
+                                        newTransition2.Source = new Source();
+                                        newTransition2.Target = new Target();
+
+                                        newTransition2.Source.Ref = srcTransition2.Source.Ref;
+                                        newTransition2.Target.Ref = newId2;
+
+                                        newTransition3 = new Transition();
+                                        newTransition3.Source = new Source();
+                                        newTransition3.Target = new Target();
+
+                                        newTransition3.Source.Ref = newId3;
+                                        newTransition3.Target.Ref = srcTransition2.Target.Ref;
+
+                                        srcTransition2.Source.Ref = newId2;
+                                        srcTransition2.Target.Ref = newId3;
+
+                                        auxLabel = new Label();
+                                        auxLabel.Kind = Constant.TransitionLabelKind.Synchronization;
+                                        auxLabel.Text = "x" + index + "?";
+                                        newTransition3.Label = new List<Label>();
+                                        newTransition3.Label.Add(auxLabel);
+
+                                        tgtTemplate2.Location.Add(newLoc2);
+                                        tgtTemplate2.Location.Add(newLoc3);
+                                        tgtTemplate2.Transition.Add(newTransition2);
+                                        tgtTemplate2.Transition.Add(newTransition3);
+                                        tgtTemplate2.Transition.Add(srcTransition2);
+                                    }
+                                }
+                            }
+                        }
+                        if (locList1.Count > 0 && tranList1.Count > 0)
+                        {
+                            model1.Template[teIndex].Location.AddRange(locList1);
+                            model1.Template[teIndex].Transition.AddRange(tranList1);
+                            locList1.Clear();
+                            tranList1.Clear();
+                        }
+                    }
+                    model1.Template.Add(tgtTemplate2);
+                }
+            }
+            return model1;
         }
     }
 }

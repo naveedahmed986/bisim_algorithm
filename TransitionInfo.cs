@@ -8,7 +8,7 @@ namespace Bisimulation_Desktop
 {
     public static class TransitionInfo
     {
-        public static Transition GetTransitionBySourceAndTarget(Template template, string sourceId, string targetId)
+        public static Transition GetTransitionBySourceAndTargetId(Template template, string sourceId, string targetId)
         {
             Transition transition = null;
             if (template != null)
@@ -33,6 +33,14 @@ namespace Bisimulation_Desktop
                 return label.Text;
             }
             return "";
+        }
+
+        public static Label TransitionHasChannel(Transition transition)
+        {
+            foreach (Label label in transition.Label)
+                if (label.Kind.Equals(Constant.TransitionLabelKind.Synchronization))
+                    return label;
+            return null;
         }
     }
 }

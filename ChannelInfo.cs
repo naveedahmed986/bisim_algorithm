@@ -23,7 +23,7 @@ namespace Bisimulation_Desktop
             if(template != null && template.Transition != null && template.Transition.Count > 0)
             {
                 string channelName = string.Empty;
-                bool isEnv = false, envSetBefore = false;
+                //bool isEnv = false, envSetBefore = false;
                 Dictionary<string, List<Tuple<bool, string, string, bool>>> newItem;
                 foreach (Transition transition in template.Transition)
                 {
@@ -111,6 +111,14 @@ namespace Bisimulation_Desktop
         public static bool IsInputChannel(string channelName)
         {
             if (!string.IsNullOrEmpty(channelName) && channelName.Substring(0,2).Equals(Constant.Common.InputChannelPrefix))
+                return true;
+            return false;
+        }
+
+        public static bool IsIOChannel(string channelName)
+        {
+            if (!string.IsNullOrEmpty(channelName) && (channelName.Substring(0, 2).Equals(Constant.Common.InputChannelPrefix) ||
+                channelName.Substring(0, 2).Equals(Constant.Common.OutputChannelPrefix)))
                 return true;
             return false;
         }

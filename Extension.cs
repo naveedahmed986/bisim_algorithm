@@ -239,7 +239,7 @@ namespace Bisimulation_Desktop
                     if (model2.Template[x].Name.Text.Trim() == model1.Template[y].Name.Text.Trim())
                     {
                         newName = model2.Template[x].Name.Text.Trim();
-                        newName = newName + "_";
+                        newName = newName + Constant.Common.TemplateRenamePostfix;
 
                         // modify template name in the system properties as well
                         string properties = @model2.System;
@@ -253,7 +253,7 @@ namespace Bisimulation_Desktop
                 {
                     if (x != z && model2.Template[x].Name.Text.Trim() == model2.Template[z].Name.Text.Trim())
                     {
-                        newName = newName + "_";
+                        newName = newName + Constant.Common.TemplateRenamePostfix;
                         model2.Template[z].Name.Text = newName;
                     }
                 }

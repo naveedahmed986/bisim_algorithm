@@ -1,9 +1,9 @@
 C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\bin\Debug\Bisimulation-Desktop.exe.config
 C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\bin\Debug\Bisimulation-Desktop.exe
 C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\bin\Debug\Bisimulation-Desktop.pdb
-C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\obj\Debug\Bisimulation-Desktop.csprojAssemblyReference.cache
+C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\obj\Debug\Bisimulation_Desktop.Main.resources
 C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\obj\Debug\Bisimulation_Desktop.Properties.Resources.resources
 C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\obj\Debug\Bisimulation-Desktop.csproj.GenerateResource.cache
 C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\obj\Debug\Bisimulation-Desktop.exe
 C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\obj\Debug\Bisimulation-Desktop.pdb
-C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\obj\Debug\Bisimulation_Desktop.Main.resources
+C:\Users\naaliz\source\repos\Bisimulation-Desktop\Bisimulation-Desktop\obj\Debug\Bisimulation-Desktop.csprojAssemblyReference.cache
