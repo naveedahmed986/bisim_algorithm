@@ -5,7 +5,7 @@ using System.IO;
 
 namespace Bisimulation_Desktop
 {
-    public static class ConvertModel
+    public static class ModelConverter
     {
         //Serialize XML to Nta and returns Nta class object
         public static Nta XMLtoNta(string path)

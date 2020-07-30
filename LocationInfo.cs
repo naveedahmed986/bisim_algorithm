@@ -31,6 +31,17 @@ namespace Bisimulation_Desktop
         {
             return ("id" + Convert.ToString(LocationInfo.locationIds.Count > 0 ? (LocationInfo.locationIds.Max() + 1) : 0));
         }
+
+        public static Location GetLocationById(Template template, string id)
+        {
+            if (!string.IsNullOrEmpty(id))
+            {
+                foreach (Location location in template.Location)
+                    if (location.Id.Equals(id))
+                        return location;
+            }
+            return null;
+        }
     }
     public static class LocationPoint
     {

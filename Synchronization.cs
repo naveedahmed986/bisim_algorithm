@@ -471,13 +471,13 @@ namespace Bisimulation_Desktop
             return false;
         }
 
-        private static string GetLabelForTransitionKind(Transition transition, string kind)
+        private static Label GetLabelForTransitionKind(Transition transition, string kind)
         {
             if (transition != null && !string.IsNullOrEmpty(kind))
                 foreach (Label l in transition.Label)
                     if (l.Kind.Equals(kind))
-                        return l.Text;
-            return string.Empty;
+                        return l;
+            return null;
         }
 
         private static List<Transition> GetPrevTransition(Template template, string id)
@@ -490,18 +490,21 @@ namespace Bisimulation_Desktop
             return tList;
         }
 
-        public static Nta SyncModels(Nta model1)
+        public static Nta SynchronizeModels(Nta model1)
         {
-            Location newLoc1 = null, newLoc2 = null, newLoc3 = null;
+            Location newLoc1 = null, newLoc2 = null, newLoc3 = null, sourceLoc=null, targetLoc=null;
             List<Location> locList1 = new List<Location>();
             List<Transition> tranList1 = new List<Transition>();
             Transition newTransition1 = null, newTransition2 = null, newTransition3 = null;
-            string newId1 = string.Empty, newId2 = string.Empty, newId3 = string.Empty;
+            string newId1 = string.Empty, newId2 = string.Empty, newId3 = string.Empty, guardVar = string.Empty,
+                syncDeclarations= string.Empty, X=string.Empty, Y=string.Empty;
             nta=model1;
-            Label label1 = null, label2 = null, auxLabel=null;
+            Label label1 = null, label2 = null, syncLabel=null;
             Transition srcTransition2 = null;
             Template tgtTemplate2 = null;
-            int index = 0;
+            int chanIndex = 0, fIndex=0, gIndex=0;
+            bool isSUT = false;
+            Tuple<string, string> coordinates=new Tuple<string, string>(string.Empty, string.Empty);
             if (model1.Template.Count <= 0)
                 return model1;
             for(int teIndex =0; teIndex < nta.Template.Count; teIndex++)
@@ -521,9 +524,22 @@ namespace Bisimulation_Desktop
                                 {
                                     if ((label2 = TransitionInfo.TransitionHasChannel(srcTransition2)) != null)
                                     {
-                                        index++;
+                                        chanIndex++;
+                                        if ((TemplateInfo.templateType[model1.Template[teIndex].Name.Text]).Equals(Constant.TemplateType.SUT))
+                                        {
+                                            gIndex++;
+                                            guardVar = "g" + gIndex;
+                                        }
+                                        else
+                                        {
+                                            fIndex++;
+                                            guardVar = "f" + fIndex;
+                                            isSUT = false;
+                                        }
+
                                         tgtTemplate2.Transition.Remove(srcTransition2);
                                         
+                                        // First part of the pattern
                                         newId1 = LocationInfo.GetNewLocationId();
                                         LocationInfo.locationIds.Add(Int32.Parse(Regex.Match(newId1, @"\d+").Value));
 
@@ -531,26 +547,89 @@ namespace Bisimulation_Desktop
                                         newLoc1.Id = newId1;
                                         newLoc1.Urgent = Constant.LocationLabelKind.Urgent;
 
+                                        sourceLoc = LocationInfo.GetLocationById(model1.Template[teIndex],
+                                            model1.Template[teIndex].Transition[trIndex].Source.Ref);
+                                        targetLoc = LocationInfo.GetLocationById(model1.Template[teIndex],
+                                            model1.Template[teIndex].Transition[trIndex].Target.Ref);
+                                        if(sourceLoc != null && targetLoc != null)
+                                        {
+                                            coordinates = LocationPoint.GetCoordinatesForLocationLastNail(sourceLoc, targetLoc, 
+                                                model1.Template[teIndex].Transition[trIndex]);
+                                            newLoc1.X = coordinates.Item1;
+                                            newLoc1.Y = coordinates.Item2;
+
+                                            coordinates = LocationPoint.CalculateCenterPoint(
+                                                Int32.Parse(sourceLoc.X),
+                                                Int32.Parse(sourceLoc.Y),
+                                                Int32.Parse(coordinates.Item1),
+                                                Int32.Parse(coordinates.Item2)); // calculate center point location for synchronization label
+                                            X = coordinates.Item1;
+                                            Y = coordinates.Item2;
+                                        }
+                                        
                                         newTransition1 = new Transition();
                                         newTransition1.Source = new Source();
                                         newTransition1.Target = new Target();
 
-                                        newTransition1.Source.Ref = model1.Template[teIndex].Transition[trIndex].Source.Ref;
-                                        newTransition1.Target.Ref = newId1;
+                                        newTransition1.Source.Ref = newId1;
+                                        newTransition1.Target.Ref = model1.Template[teIndex].Transition[trIndex].Target.Ref;
 
-                                        model1.Template[teIndex].Transition[trIndex].Source.Ref = newId1;
-                                        newTransition1.Target.Ref = newId1;
-                                        //model1.Template[teIndex].Transition[trIndex].Target =
+                                        syncLabel = new Label();
+                                        syncLabel.Kind = Constant.TransitionLabelKind.Synchronization;
+                                        syncLabel.Text = Constant.Common.AuxilaryChannelPostfix + chanIndex + Constant.ActionType.Sender;
+                                        syncLabel.X = X;
+                                        syncLabel.Y = Y;
 
-                                        auxLabel = new Label();
-                                        auxLabel.Kind = Constant.TransitionLabelKind.Synchronization;
-                                        auxLabel.Text = "x" + index + "!";
                                         newTransition1.Label = new List<Label>();
-                                        newTransition1.Label.Add(auxLabel);
+                                        newTransition1.Label.Add(syncLabel);
+
+                                        model1.Template[teIndex].Transition[trIndex].Target.Ref = newId1;
+
+                                        syncLabel = GetLabelForTransitionKind(model1.Template[teIndex].Transition[trIndex], Constant.TransitionLabelKind.Update);
+                                        if (syncLabel == null)
+                                        {
+                                            syncLabel = new Label();
+                                            syncLabel.Kind = Constant.TransitionLabelKind.Update;
+                                            syncLabel.Text = guardVar + "=1";
+                                            X = coordinates.Item1;
+                                            Y = coordinates.Item2;
+                                            model1.Template[teIndex].Transition[trIndex].Label.Add(syncLabel);
+                                        }
+                                        else
+                                        {
+                                            model1.Template[teIndex].Transition[trIndex].Label.Remove(syncLabel);
+                                            syncLabel.Text = syncLabel.Text + ", " + guardVar + "=1";
+                                            model1.Template[teIndex].Transition[trIndex].Label.Add(syncLabel);
+                                        }
+
+                                        if (!isSUT) // if template is not controller then add flag to the pattern
+                                        {
+                                            syncLabel = GetLabelForTransitionKind(model1.Template[teIndex].Transition[trIndex], Constant.TransitionLabelKind.Guard);
+                                            if (syncLabel == null)
+                                            {
+                                                syncLabel = new Label();
+                                                syncLabel.Kind = Constant.TransitionLabelKind.Guard;
+                                                syncLabel.Text = "flag==false";
+                                                syncLabel.X = X;
+                                                syncLabel.Y = Y;
+                                                model1.Template[teIndex].Transition[trIndex].Label.Add(syncLabel);
+                                            }
+                                            else
+                                            {
+                                                model1.Template[teIndex].Transition[trIndex].Label.Remove(syncLabel);
+                                                syncLabel.Text = syncLabel.Text + " && flag==false";
+                                                model1.Template[teIndex].Transition[trIndex].Label.Add(syncLabel);
+                                            }
+                                            syncLabel = GetLabelForTransitionKind(model1.Template[teIndex].Transition[trIndex], Constant.TransitionLabelKind.Update);
+                                            model1.Template[teIndex].Transition[trIndex].Label.Remove(syncLabel);
+                                            syncLabel.Text = syncLabel.Text + ", flag=true";
+                                            model1.Template[teIndex].Transition[trIndex].Label.Add(syncLabel);
+                                        }
 
                                         locList1.Add(newLoc1);
                                         tranList1.Add(newTransition1);
-
+                                        
+                                        // Second part of the pattern
                                         newId2 = LocationInfo.GetNewLocationId();
                                         LocationInfo.locationIds.Add(Int32.Parse(Regex.Match(newId2, @"\d+").Value));
                                         newId3 = LocationInfo.GetNewLocationId();
@@ -560,32 +639,90 @@ namespace Bisimulation_Desktop
                                         newLoc2.Id = newId2;
                                         newLoc2.Urgent = Constant.LocationLabelKind.Urgent;
 
+                                        newTransition2 = new Transition();
+                                        newTransition2.Source = new Source();
+                                        newTransition2.Target = new Target();
+                                        newTransition2.Source.Ref = srcTransition2.Source.Ref;
+                                        newTransition2.Target.Ref = newId2;
+                                        newTransition2.Label = new List<Label>();
+
+                                        sourceLoc = LocationInfo.GetLocationById(tgtTemplate2, srcTransition2.Source.Ref);
+                                        targetLoc = LocationInfo.GetLocationById(tgtTemplate2, srcTransition2.Target.Ref);
+                                        if (sourceLoc != null && targetLoc != null)
+                                        {
+                                            coordinates = LocationPoint.GetCoordinatesForLocationLastNail(sourceLoc, targetLoc, srcTransition2);
+                                            newLoc2.X = coordinates.Item1;
+                                            newLoc2.Y = coordinates.Item2;
+
+                                            coordinates = LocationPoint.CalculateCenterPoint(
+                                                Int32.Parse(sourceLoc.X),
+                                                Int32.Parse(sourceLoc.Y),
+                                                Int32.Parse(coordinates.Item1),
+                                                Int32.Parse(coordinates.Item2)); // calculate center point location for synchronization label
+                                            X = coordinates.Item1;
+                                            Y = coordinates.Item2;
+                                        }
+
+                                        syncLabel = new Label();
+                                        syncLabel.Kind = Constant.TransitionLabelKind.Guard;
+                                        syncLabel.Text = guardVar + "==1";
+                                        syncLabel.X = X;
+                                        syncLabel.Y = Y;
+                                        newTransition2.Label.Add(syncLabel);
+
+                                        syncLabel = new Label();
+                                        syncLabel.Kind = Constant.TransitionLabelKind.Update;
+                                        syncLabel.Text = guardVar + "=0";
+                                        syncLabel.X = X;
+                                        syncLabel.Y = Y;
+                                        newTransition2.Label.Add(syncLabel);
+
                                         newLoc3 = new Location();
                                         newLoc3.Id = newId3;
                                         newLoc3.Committed = Constant.LocationLabelKind.Committed;
 
-                                        newTransition2 = new Transition();
-                                        newTransition2.Source = new Source();
-                                        newTransition2.Target = new Target();
-
-                                        newTransition2.Source.Ref = srcTransition2.Source.Ref;
-                                        newTransition2.Target.Ref = newId2;
-
                                         newTransition3 = new Transition();
                                         newTransition3.Source = new Source();
                                         newTransition3.Target = new Target();
-
                                         newTransition3.Source.Ref = newId3;
                                         newTransition3.Target.Ref = srcTransition2.Target.Ref;
+                                        newTransition3.Label = new List<Label>();
 
+                                        //sourceLoc = LocationInfo.GetLocationById(tgtTemplate2, newTransition3.Source.Ref);
+                                        targetLoc = LocationInfo.GetLocationById(tgtTemplate2, srcTransition2.Target.Ref);
+                                        if (newLoc2 != null && targetLoc != null)
+                                        {
+                                            coordinates = LocationPoint.GetCoordinatesForLocationLastNail(newLoc2, targetLoc, newTransition3);
+                                            newLoc3.X = coordinates.Item1;
+                                            newLoc3.Y = coordinates.Item2;
+
+                                            coordinates = LocationPoint.CalculateCenterPoint(
+                                                Int32.Parse(newLoc2.X),
+                                                Int32.Parse(newLoc2.Y),
+                                                Int32.Parse(coordinates.Item1),
+                                                Int32.Parse(coordinates.Item2)); // calculate center point location for synchronization label
+                                            X = coordinates.Item1;
+                                            Y = coordinates.Item2;
+                                        }
+
+                                        syncLabel = new Label();
+                                        syncLabel.Kind = Constant.TransitionLabelKind.Synchronization;
+                                        syncLabel.Text = Constant.Common.AuxilaryChannelPostfix + chanIndex + Constant.ActionType.Receiver;
+                                        syncLabel.X = X;
+                                        syncLabel.Y = Y;
+                                        newTransition3.Label.Add(syncLabel);
+                                        if (!isSUT)
+                                        {
+                                            syncLabel = new Label();
+                                            syncLabel.Kind = Constant.TransitionLabelKind.Update;
+                                            syncLabel.Text = "flag=false";
+                                            syncLabel.X = X;
+                                            syncLabel.Y = Y;
+                                            newTransition3.Label.Add(syncLabel);
+                                        }
+                                        
                                         srcTransition2.Source.Ref = newId2;
                                         srcTransition2.Target.Ref = newId3;
-
-                                        auxLabel = new Label();
-                                        auxLabel.Kind = Constant.TransitionLabelKind.Synchronization;
-                                        auxLabel.Text = "x" + index + "?";
-                                        newTransition3.Label = new List<Label>();
-                                        newTransition3.Label.Add(auxLabel);
 
                                         tgtTemplate2.Location.Add(newLoc2);
                                         tgtTemplate2.Location.Add(newLoc3);
@@ -607,6 +744,29 @@ namespace Bisimulation_Desktop
                     model1.Template.Add(tgtTemplate2);
                 }
             }
+            if (chanIndex > 0)
+            {
+                syncDeclarations = "\nchan ";
+                for (int i = 0; i < chanIndex; i++)
+                    syncDeclarations = syncDeclarations + Constant.Common.AuxilaryChannelPostfix + (i+1) + ", ";
+                syncDeclarations = syncDeclarations.Substring(0, syncDeclarations.Length - 2) + ";\n";
+            }
+            if(gIndex > 0)
+            {
+                syncDeclarations = syncDeclarations + "int ";
+                for(int i = 0; i < gIndex; i++)
+                    syncDeclarations = syncDeclarations + "g" + (i+1) + ", ";
+                syncDeclarations = syncDeclarations.Substring(0, syncDeclarations.Length - 2) + ";\n";
+            }
+            if (fIndex > 0)
+            {
+                syncDeclarations = syncDeclarations + "int ";
+                for (int i = 0; i < fIndex; i++)
+                    syncDeclarations = syncDeclarations + "f" + (i + 1) + ", ";
+                syncDeclarations = syncDeclarations.Substring(0, syncDeclarations.Length - 2) + ";\n";
+                syncDeclarations = syncDeclarations + "bool flag = false;\n";
+            }
+            model1.Declaration = model1.Declaration + syncDeclarations;
             return model1;
         }
     }

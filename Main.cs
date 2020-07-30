@@ -162,7 +162,7 @@ namespace Bisimulation_Desktop
             {
                 SetLoading(true);
                 Nta model = TransformModels();
-                string transformedFilePath = ConvertModel.NtatoXML(model);
+                string transformedFilePath = ModelConverter.NtatoXML(model);
                 if (!string.IsNullOrEmpty(transformedFilePath))
                 {
                     richTextBox1.ForeColor = Color.Black;
@@ -180,10 +180,10 @@ namespace Bisimulation_Desktop
         {
             try
             {
-                Nta model1 = ConvertModel.XMLtoNta(filePath);
+                Nta model1 = ModelConverter.XMLtoNta(filePath);
                 if (!string.IsNullOrEmpty(filePath2)) // merge model2 only if file path is provided
                 {
-                    Nta model2 = ConvertModel.XMLtoNta(filePath2);
+                    Nta model2 = ModelConverter.XMLtoNta(filePath2);
                     model2 = Extension.RenameTemplatesInModel(model1, model2);
                     model2 = Extension.ModifyC_Code(model2);
                     //model1 = Extension.MergeModels(model1, model2);
@@ -218,7 +218,7 @@ namespace Bisimulation_Desktop
 
                     foreach (Template template in model1.Template)
                     {
-                        ChannelInfo.AddTemplateType(template);
+                        TemplateInfo.AddTemplateType(template);
 
                         ndTList = new NdTransition();
                         ndLList = new NdLocation();
@@ -234,9 +234,9 @@ namespace Bisimulation_Desktop
 
                     // Add auxilary channels for all I/O actions in the model
                     //model1 = Synchronization.SyncIOActions(model1);
+                    model1 = Synchronization.SynchronizeModels(model1);
                     //***********************************
 
-                    model1 = Synchronization.SyncModels(model1);
                     // Add committed locations for all locations that have more than one out going  transitions
                     //model1 = AddAuxilaryForNdLocation(ndLocationList, model1);
                     //**************************************

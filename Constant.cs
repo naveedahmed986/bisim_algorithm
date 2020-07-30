@@ -34,6 +34,7 @@ namespace Bisimulation_Desktop
         public static class TemplateType
         {
             public static string ENV = "ENV";
+            public static string SUT = "SUT";
             public static string Other = "OTHER";
         }
 
