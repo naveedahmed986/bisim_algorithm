@@ -15,6 +15,7 @@ namespace Bisimulation_Desktop
             public static string OutputChannelPrefix = "o_";
             public static string VariablePostfix = "_";
             public static string TemplateRenamePostfix = "_";
+            public static string SavedFileName = "bisim_model.xml";
         }
         public static class TransitionLabelKind
         {
@@ -43,6 +44,7 @@ namespace Bisimulation_Desktop
             public static string Initial = "initial";
             public static string Committed = "committed";
             public static string Urgent = "urgent";
+            public static string Invariant = "invariant";
         }
 
         public static class Pattern
@@ -52,6 +54,7 @@ namespace Bisimulation_Desktop
             public static string functionPattern = @"^(\s*\w+\s+\w+\s*)\(.*\)";
             public static string functionArgsPattern = @"\b(?!void|int|bool|const|typedef|clock|urgent|broadcast|chan|double)\w+\b";
             public static string arrayRangePattern = @"\b[a-zA-Z](\w+)*\b";
+            public static string channelDeclarationLinePattern = @"\bchan\b\s+\w+\[\w+\]";
         }
     }
 }

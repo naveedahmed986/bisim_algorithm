@@ -45,7 +45,7 @@
             this.richTextBox1.Location = new System.Drawing.Point(12, 118);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
-            this.richTextBox1.Size = new System.Drawing.Size(1248, 821);
+            this.richTextBox1.Size = new System.Drawing.Size(1248, 223);
             this.richTextBox1.TabIndex = 0;
             this.richTextBox1.Text = "";
             // 
@@ -120,7 +120,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(1272, 951);
+            this.ClientSize = new System.Drawing.Size(1272, 356);
             this.Controls.Add(this.picLoader);
             this.Controls.Add(this.parseSelection);
             this.Controls.Add(this.pathLabel2);

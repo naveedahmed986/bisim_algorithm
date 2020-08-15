@@ -309,5 +309,19 @@ namespace Bisimulation_Desktop
             model1.System = systemProperties1;
             return model1;
         }
+
+        public static string GetIdVariableFromDeclations(string declarations)
+        {
+            string id = string.Empty;
+            if(!string.IsNullOrEmpty(declarations))
+            {
+                var matched = Regex.Match(declarations, Constant.Pattern.channelDeclarationLinePattern);
+                if (matched.Success)
+                {
+                    id = matched.Value.Substring(matched.Value.IndexOf('[')+1, (matched.Value.IndexOf(']')- matched.Value.IndexOf('['))-1);
+                }
+            }
+            return id;
+        }
     }
 }

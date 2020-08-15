@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Configuration;
 
 namespace Bisimulation_Desktop
 {
@@ -162,12 +163,21 @@ namespace Bisimulation_Desktop
             {
                 SetLoading(true);
                 Nta model = TransformModels();
-                string transformedFilePath = ModelConverter.NtatoXML(model);
-                if (!string.IsNullOrEmpty(transformedFilePath))
+                string message = ModelConverter.NtatoXML(model);
+                if (string.IsNullOrEmpty(message))
                 {
                     richTextBox1.ForeColor = Color.Black;
-                    richTextBox1.Text = "File saved at : " + transformedFilePath;
-                    richTextBox1.AppendText("\n\nFile name : bi_model.xml");
+                    string filePath = ConfigurationManager.AppSettings["filePath"];
+                    if (string.IsNullOrEmpty(filePath))
+                        richTextBox1.Text = "File saved at: " + Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\";
+                    else
+                        richTextBox1.Text = "File saved at: " + filePath;
+                    richTextBox1.AppendText("\n\nFile name: " + Constant.Common.SavedFileName);
+                }
+                else
+                {
+                    richTextBox1.ForeColor = Color.Red;
+                    richTextBox1.Text = message;
                 }
                 SetLoading(false);
             }

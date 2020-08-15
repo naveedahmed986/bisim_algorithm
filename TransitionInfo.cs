@@ -42,5 +42,13 @@ namespace Bisimulation_Desktop
                     return label;
             return null;
         }
+
+        public static Label TransitionHasGuard(Transition transition)
+        {
+            foreach (Label label in transition.Label)
+                if (label.Kind.Equals(Constant.TransitionLabelKind.Guard))
+                    return label;
+            return null;
+        }
     }
 }

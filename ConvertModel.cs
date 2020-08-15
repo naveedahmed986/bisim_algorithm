@@ -2,6 +2,7 @@
 using System.Xml;
 using System.Xml.Serialization;
 using System.IO;
+using System.Configuration;
 
 namespace Bisimulation_Desktop
 {
@@ -21,22 +22,30 @@ namespace Bisimulation_Desktop
         //Serialize Nta to XML and write it on the disk
         public static string NtatoXML(Nta model)
         {
-            if (model != null)
+            try
             {
-                XmlSerializer xml = new XmlSerializer(typeof(Nta));
-                var xmlnsEmpty = new XmlSerializerNamespaces();
-                xmlnsEmpty.Add("", "");
-                var path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "//bi_model.xml";
-                FileStream file = File.Create(path);
-                using (XmlWriter writer = XmlWriter.Create(file))
+                if (model != null)
                 {
-                    //writer.WriteDocType("nta", "-//Uppaal Team//DTD Flat System 1.1//EN\' \'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd\'", null, null);
-                    xml.Serialize(writer, model, xmlnsEmpty);
+                    XmlSerializer xml = new XmlSerializer(typeof(Nta));
+                    var xmlnsEmpty = new XmlSerializerNamespaces();
+                    xmlnsEmpty.Add("", "");
+                    string filePath = ConfigurationManager.AppSettings["filePath"];
+                    if (string.IsNullOrEmpty(filePath))
+                        filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "//" + Constant.Common.SavedFileName;
+                    FileStream file = File.Create(filePath);
+                    using (XmlWriter writer = XmlWriter.Create(file))
+                    {
+                        //writer.WriteDocType("nta", "-//Uppaal Team//DTD Flat System 1.1//EN\' \'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd\'", null, null);
+                        xml.Serialize(writer, model, xmlnsEmpty);
+                    }
+                    file.Close();
                 }
-                file.Close();
-                return path;
+                return string.Empty;
             }
-            return string.Empty;
+            catch(Exception ex)
+            {
+                return ex.Message;
+            }
         }
     }
 }
